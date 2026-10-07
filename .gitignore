@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Production / Build outputs
+dist/
+**/dist/
+.next/
+**/.next/
+.expo/
+**/.expo/
+.turbo/
+**/.turbo/
+
+# Environment and Secrets
+.env
+.env*.local
+!.env.example
+
+# Database & Runtime Data
+data/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Native builds
+mobile/android/
+mobile/ios/
+apps/*/android/
+apps/*/ios/
+
+# OS files
+.DS_Store
+Thumbs.db

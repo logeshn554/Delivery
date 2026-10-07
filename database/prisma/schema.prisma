@@ -1,0 +1,1325 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// DeliveryOS — Prisma Database Schema
+// Production-grade schema for a multi-service delivery & mobility platform
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "fullTextSearch"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  shadowDatabaseUrl = env("DATABASE_SHADOW_URL")
+  extensions = [postgis, pg_trgm, uuid_ossp]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  CUSTOMER
+  DRIVER
+  RESTAURANT_OWNER
+  BUSINESS_OWNER
+  SUPPORT_AGENT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+  PENDING_VERIFICATION
+}
+
+enum DriverStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  SUSPENDED
+  INACTIVE
+}
+
+enum DriverAvailability {
+  ONLINE
+  OFFLINE
+  ON_TRIP
+  ON_BREAK
+}
+
+enum VehicleType {
+  BICYCLE
+  MOTORCYCLE
+  AUTO_RICKSHAW
+  CAR_MINI
+  CAR_SEDAN
+  CAR_SUV
+  VAN
+  TRUCK_MINI
+  TRUCK_MEDIUM
+  TRUCK_LARGE
+  TRANSPORT_TRUCK
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum ServiceType {
+  FOOD_DELIVERY
+  RIDE
+  PACKAGE_DELIVERY
+  VEHICLE_TRANSPORT
+  BUSINESS_DELIVERY
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  ASSIGNED
+  DRIVER_HEADING_TO_PICKUP
+  DRIVER_AT_PICKUP
+  PICKED_UP
+  IN_TRANSIT
+  DRIVER_AT_DROPOFF
+  DELIVERED
+  CANCELLED
+  REFUNDED
+  FAILED
+}
+
+enum RideStatus {
+  REQUESTED
+  SEARCHING
+  ASSIGNED
+  DRIVER_ARRIVING
+  DRIVER_ARRIVED
+  STARTED
+  COMPLETED
+  CANCELLED
+  NO_DRIVER_FOUND
+}
+
+enum PackageStatus {
+  PENDING
+  CONFIRMED
+  ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  DELIVERY_FAILED
+  RETURNED
+  CANCELLED
+}
+
+enum VehicleTransportStatus {
+  REQUESTED
+  CONFIRMED
+  ASSIGNED
+  INSPECTION_PENDING
+  INSPECTED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  WALLET
+  CARD
+  UPI
+  NETBANKING
+  RAZORPAY
+  STRIPE
+}
+
+enum PaymentProvider {
+  RAZORPAY
+  STRIPE
+  INTERNAL
+}
+
+enum WalletTransactionType {
+  CREDIT
+  DEBIT
+}
+
+enum WalletTransactionReason {
+  TOP_UP
+  ORDER_PAYMENT
+  RIDE_PAYMENT
+  PACKAGE_PAYMENT
+  REFUND
+  CASHBACK
+  BONUS
+  REFERRAL
+  WITHDRAWAL
+  CORRECTION
+  COMMISSION
+  EARNINGS
+  TIP
+}
+
+enum NotificationChannel {
+  PUSH
+  SMS
+  EMAIL
+  WHATSAPP
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  READ
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_ON_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum DispatchStatus {
+  QUEUED
+  SEARCHING
+  SENT_TO_DRIVER
+  ACCEPTED
+  REJECTED
+  TIMED_OUT
+  COMPLETED
+  FAILED
+}
+
+enum InspectionType {
+  PRE_PICKUP
+  POST_DELIVERY
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_DELIVERY
+}
+
+enum RatingTarget {
+  DRIVER
+  CUSTOMER
+  RESTAURANT
+  BUSINESS
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone       String     @unique
+  email       String?    @unique
+  name        String
+  avatar      String?
+  role        UserRole   @default(CUSTOMER)
+  status      UserStatus @default(ACTIVE)
+  isPhoneVerified Boolean @default(false)
+  isEmailVerified Boolean @default(false)
+  referralCode String?   @unique
+  referredBy  String?    @db.Uuid
+  fcmTokens   String[]   @default([])
+  preferredLanguage String @default("en")
+  currency    String     @default("INR")
+  country     String     @default("IN")
+  lastActiveAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  addresses     UserAddress[]
+  sessions      UserSession[]
+  otps          OTP[]
+  orders        FoodOrder[]
+  rides         Ride[]
+  packages      Package[]
+  vehicleTransports VehicleTransport[]
+  payments      Payment[]
+  wallet        Wallet?
+  ratingsGiven  Rating[]         @relation("RaterUser")
+  ratingsReceived Rating[]       @relation("RatedUser")
+  notifications Notification[]
+  supportTickets SupportTicket[] @relation("CustomerTickets")
+  couponUsages  CouponUsage[]
+  driver        Driver?
+  restaurant    Restaurant?
+  business      Business?
+
+  @@index([phone])
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([referralCode])
+  @@map("users")
+}
+
+model UserAddress {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @db.Uuid
+  label       String   // Home, Work, Other
+  line1       String
+  line2       String?
+  city        String
+  state       String
+  country     String   @default("IN")
+  postalCode  String
+  latitude    Float
+  longitude   Float
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_addresses")
+}
+
+model UserSession {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @db.Uuid
+  refreshToken String   @unique
+  deviceId     String?
+  deviceName   String?
+  platform     String?  // ios, android, web
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshToken])
+  @@map("user_sessions")
+}
+
+model OTP {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String?  @db.Uuid
+  phone       String
+  code        String
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(5)
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([phone])
+  @@index([code])
+  @@map("otps")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DRIVERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Driver {
+  id              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String             @unique @db.Uuid
+  status          DriverStatus       @default(PENDING)
+  availability    DriverAvailability @default(OFFLINE)
+  currentLat      Float?
+  currentLng      Float?
+  lastLocationAt  DateTime?
+  heading         Float?
+  speed           Float?
+  rating          Float              @default(0)
+  totalRatings    Int                @default(0)
+  totalTrips      Int                @default(0)
+  totalEarnings   Float              @default(0)
+  activeOrderId   String?            @db.Uuid
+  serviceTypes    ServiceType[]
+  isBackgroundLocationEnabled Boolean @default(false)
+  rejectionReason String?
+  approvedAt      DateTime?
+  approvedBy      String?            @db.Uuid
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle         DriverVehicle?
+  documents       DriverDocument[]
+  earnings        DriverEarning[]
+  locationHistory DriverLocation[]
+  dispatches      DispatchAttempt[]
+  ratingsReceived Rating[]           @relation("RatedDriver")
+  wallet          Wallet?
+
+  @@index([status])
+  @@index([availability])
+  @@index([currentLat, currentLng])
+  @@map("drivers")
+}
+
+model DriverVehicle {
+  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  driverId           String      @unique @db.Uuid
+  vehicleType        VehicleType
+  make               String
+  model              String
+  year               Int
+  color              String
+  registrationNumber String      @unique
+  registrationExpiry DateTime
+  insuranceNumber    String?
+  insuranceExpiry    DateTime?
+  photos             String[]    @default([])
+  isVerified         Boolean     @default(false)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  driver             Driver      @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleType])
+  @@map("driver_vehicles")
+}
+
+model DriverDocument {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  driverId    String         @db.Uuid
+  type        String         // DRIVING_LICENSE, VEHICLE_RC, INSURANCE, PAN, AADHAAR, PROFILE_PHOTO, etc.
+  fileUrl     String
+  fileKey     String
+  status      DocumentStatus @default(PENDING)
+  expiryDate  DateTime?
+  remarks     String?
+  reviewedBy  String?        @db.Uuid
+  reviewedAt  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  driver      Driver         @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([status])
+  @@map("driver_documents")
+}
+
+model DriverLocation {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  driverId  String   @db.Uuid
+  latitude  Float
+  longitude Float
+  heading   Float?
+  speed     Float?
+  accuracy  Float?
+  timestamp DateTime @default(now())
+
+  driver    Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([timestamp])
+  @@map("driver_locations")
+}
+
+model DriverEarning {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  driverId    String   @db.Uuid
+  orderId     String?  @db.Uuid
+  serviceType ServiceType
+  amount      Float
+  commission  Float
+  bonus       Float    @default(0)
+  tip         Float    @default(0)
+  net         Float
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  driver      Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([date])
+  @@map("driver_earnings")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RESTAURANTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Restaurant {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId         String   @unique @db.Uuid
+  name            String
+  slug            String   @unique
+  description     String?
+  logo            String?
+  coverImage      String?
+  phone           String
+  email           String?
+  address         String
+  city            String
+  state           String
+  country         String   @default("IN")
+  postalCode      String
+  latitude        Float
+  longitude       Float
+  cuisineTypes    String[]
+  isOpen          Boolean  @default(false)
+  isVerified      Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  rating          Float    @default(0)
+  totalRatings    Int      @default(0)
+  totalOrders     Int      @default(0)
+  minOrderAmount  Float    @default(0)
+  avgDeliveryTime Int      @default(30) // minutes
+  deliveryRadius  Float    @default(5)  // km
+  commissionRate  Float    @default(20) // percentage
+  openingHours    Json?    // { mon: { open: "09:00", close: "22:00" }, ... }
+  tags            String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner           User           @relation(fields: [ownerId], references: [id])
+  categories      MenuCategory[]
+  menuItems       MenuItem[]
+  orders          FoodOrder[]
+  ratings         Rating[]       @relation("RatedRestaurant")
+
+  @@index([city])
+  @@index([isOpen, isActive])
+  @@index([latitude, longitude])
+  @@map("restaurants")
+}
+
+model MenuCategory {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurantId String     @db.Uuid
+  name         String
+  description  String?
+  image        String?
+  sortOrder    Int        @default(0)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items        MenuItem[]
+
+  @@index([restaurantId])
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurantId String       @db.Uuid
+  categoryId   String       @db.Uuid
+  name         String
+  description  String?
+  image        String?
+  price        Float
+  originalPrice Float?
+  isVeg        Boolean      @default(true)
+  isVegan      Boolean      @default(false)
+  isGlutenFree Boolean      @default(false)
+  spiceLevel   Int          @default(0) // 0-5
+  calories     Int?
+  allergens    String[]
+  addons       Json?        // [{ name: "Extra Cheese", price: 20 }]
+  isAvailable  Boolean      @default(true)
+  sortOrder    Int          @default(0)
+  tags         String[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  category     MenuCategory @relation(fields: [categoryId], references: [id])
+  orderItems   FoodOrderItem[]
+
+  @@index([restaurantId])
+  @@index([categoryId])
+  @@index([isAvailable])
+  @@map("menu_items")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FOOD ORDERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model FoodOrder {
+  id                  String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderNumber         String      @unique
+  customerId          String      @db.Uuid
+  restaurantId        String      @db.Uuid
+  driverId            String?     @db.Uuid
+  status              OrderStatus @default(PENDING)
+  deliveryAddress     Json        // { line1, city, lat, lng, ... }
+  specialInstructions String?
+  items               FoodOrderItem[]
+  subtotal            Float
+  deliveryFee         Float
+  taxAmount           Float
+  discountAmount      Float       @default(0)
+  tipAmount           Float       @default(0)
+  totalAmount         Float
+  paymentMethod       PaymentMethod
+  paymentStatus       PaymentStatus @default(PENDING)
+  couponId            String?     @db.Uuid
+  estimatedPickupAt   DateTime?
+  estimatedDeliveryAt DateTime?
+  pickedUpAt          DateTime?
+  deliveredAt         DateTime?
+  cancelledAt         DateTime?
+  cancelReason        String?
+  cancelledBy         String?
+  rating              Float?
+  driverRating        Float?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  customer            User        @relation(fields: [customerId], references: [id])
+  restaurant          Restaurant  @relation(fields: [restaurantId], references: [id])
+  payment             Payment?
+  dispatch            Dispatch?
+  tracking            TrackingEvent[]
+  ratings             Rating[]
+
+  @@index([customerId])
+  @@index([restaurantId])
+  @@index([driverId])
+  @@index([status])
+  @@index([orderNumber])
+  @@index([createdAt])
+  @@map("food_orders")
+}
+
+model FoodOrderItem {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId      String    @db.Uuid
+  menuItemId   String    @db.Uuid
+  name         String
+  price        Float
+  quantity     Int
+  addons       Json?
+  totalPrice   Float
+  notes        String?
+
+  order        FoodOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem     MenuItem  @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId])
+  @@map("food_order_items")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RIDES
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Ride {
+  id                  String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  rideNumber          String      @unique
+  customerId          String      @db.Uuid
+  driverId            String?     @db.Uuid
+  status              RideStatus  @default(REQUESTED)
+  vehicleType         VehicleType
+  pickupAddress       String
+  pickupLat           Float
+  pickupLng           Float
+  dropoffAddress      String
+  dropoffLat          Float
+  dropoffLng          Float
+  stops               RideStop[]
+  distanceKm          Float?
+  durationMinutes     Int?
+  polyline            String?
+  baseFare            Float
+  perKmRate           Float
+  perMinuteRate       Float
+  surgeMultiplier     Float       @default(1.0)
+  estimatedFare       Float
+  actualFare          Float?
+  paymentMethod       PaymentMethod
+  paymentStatus       PaymentStatus @default(PENDING)
+  scheduledAt         DateTime?
+  driverAssignedAt    DateTime?
+  driverArrivedAt     DateTime?
+  startedAt           DateTime?
+  completedAt         DateTime?
+  cancelledAt         DateTime?
+  cancelReason        String?
+  cancelledBy         String?
+  odometerStart       Float?
+  odometerEnd         Float?
+  rating              Float?
+  driverRating        Float?
+  notes               String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  customer            User        @relation(fields: [customerId], references: [id])
+  payment             Payment?
+  dispatch            Dispatch?
+  tracking            TrackingEvent[]
+  ratings             Rating[]
+
+  @@index([customerId])
+  @@index([driverId])
+  @@index([status])
+  @@index([rideNumber])
+  @@index([createdAt])
+  @@map("rides")
+}
+
+model RideStop {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  rideId    String   @db.Uuid
+  sequence  Int
+  address   String
+  latitude  Float
+  longitude Float
+  arrivedAt DateTime?
+
+  ride      Ride     @relation(fields: [rideId], references: [id], onDelete: Cascade)
+
+  @@index([rideId])
+  @@map("ride_stops")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PACKAGES
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Package {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  trackingNumber      String        @unique
+  customerId          String        @db.Uuid
+  driverId            String?       @db.Uuid
+  status              PackageStatus @default(PENDING)
+  packageType         String        // DOCUMENT, SMALL, MEDIUM, LARGE, FRAGILE, PERISHABLE
+  description         String?
+  weightKg            Float
+  lengthCm            Float?
+  widthCm             Float?
+  heightCm            Float?
+  declaredValue       Float?
+  isFragile           Boolean       @default(false)
+  requiresSignature   Boolean       @default(true)
+  requiresOTP         Boolean       @default(false)
+  photos              String[]      @default([])
+  senderName          String
+  senderPhone         String
+  senderAddress       Json
+  receiverName        String
+  receiverPhone       String
+  receiverAddress     Json
+  deliveryOTP         String?
+  deliveryInstructions String?
+  estimatedDeliveryAt DateTime?
+  pickedUpAt          DateTime?
+  deliveredAt         DateTime?
+  cancelledAt         DateTime?
+  cancelReason        String?
+  deliveryProof       DeliveryProof?
+  baseFare            Float
+  weightFare          Float
+  totalFare           Float
+  paymentMethod       PaymentMethod
+  paymentStatus       PaymentStatus @default(PENDING)
+  couponId            String?       @db.Uuid
+  rating              Float?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  customer            User          @relation(fields: [customerId], references: [id])
+  payment             Payment?
+  dispatch            Dispatch?
+  tracking            TrackingEvent[]
+  ratings             Rating[]
+
+  @@index([customerId])
+  @@index([driverId])
+  @@index([status])
+  @@index([trackingNumber])
+  @@index([createdAt])
+  @@map("packages")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VEHICLE TRANSPORT
+// ─────────────────────────────────────────────────────────────────────────────
+
+model VehicleTransport {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bookingNumber         String                 @unique
+  customerId            String                 @db.Uuid
+  driverId              String?                @db.Uuid
+  status                VehicleTransportStatus @default(REQUESTED)
+  vehicleMake           String
+  vehicleModel          String
+  vehicleYear           Int
+  vehicleColor          String
+  vehicleRegistration   String
+  vehicleCondition      String?
+  specialInstructions   String?
+  photos                String[]               @default([])
+  pickupAddress         String
+  pickupLat             Float
+  pickupLng             Float
+  dropoffAddress        String
+  dropoffLat            Float
+  dropoffLng            Float
+  distanceKm            Float?
+  estimatedDays         Int?
+  baseFare              Float
+  totalFare             Float
+  paymentMethod         PaymentMethod
+  paymentStatus         PaymentStatus          @default(PENDING)
+  prePickupInspection   Json?
+  postDeliveryInspection Json?
+  deliveryOTP           String?
+  scheduledPickupAt     DateTime?
+  inspectedAt           DateTime?
+  pickedUpAt            DateTime?
+  deliveredAt           DateTime?
+  cancelledAt           DateTime?
+  cancelReason          String?
+  rating                Float?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  customer              User                   @relation(fields: [customerId], references: [id])
+  inspections           VehicleInspection[]
+  vehiclePhotos         VehiclePhoto[]
+  payment               Payment?
+  dispatch              Dispatch?
+  tracking              TrackingEvent[]
+  ratings               Rating[]
+
+  @@index([customerId])
+  @@index([driverId])
+  @@index([status])
+  @@index([bookingNumber])
+  @@map("vehicle_transports")
+}
+
+model VehicleInspection {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transportId       String           @db.Uuid
+  type              InspectionType
+  inspectedBy       String           @db.Uuid
+  exteriorCondition String
+  tireCondition     String
+  fuelLevel         String
+  mileage           Float?
+  dents             String[]
+  scratches         String[]
+  damageNotes       String?
+  photos            String[]
+  customerSignature String?
+  driverSignature   String?
+  createdAt         DateTime         @default(now())
+
+  transport         VehicleTransport @relation(fields: [transportId], references: [id], onDelete: Cascade)
+
+  @@index([transportId])
+  @@map("vehicle_inspections")
+}
+
+model VehiclePhoto {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transportId String           @db.Uuid
+  fileUrl     String
+  fileKey     String
+  phase       String           // PRE_PICKUP, POST_DELIVERY
+  createdAt   DateTime         @default(now())
+
+  transport   VehicleTransport @relation(fields: [transportId], references: [id], onDelete: Cascade)
+
+  @@index([transportId])
+  @@map("vehicle_photos")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DISPATCH
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Dispatch {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  serviceType     ServiceType
+  referenceId     String         @db.Uuid  // food_order, ride, package, vehicle_transport id
+  status          DispatchStatus @default(QUEUED)
+  assignedDriverId String?       @db.Uuid
+  searchRadiusKm  Float          @default(3)
+  maxRadiusKm     Float          @default(10)
+  attempts        DispatchAttempt[]
+  strategy        String         @default("NEAREST_DRIVER")
+  startedAt       DateTime?
+  assignedAt      DateTime?
+  failedAt        DateTime?
+  failReason      String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  foodOrder       FoodOrder?     @relation(fields: [referenceId], references: [id], map: "dispatch_food_order_fk")
+  ride            Ride?          @relation(fields: [referenceId], references: [id], map: "dispatch_ride_fk")
+  package         Package?       @relation(fields: [referenceId], references: [id], map: "dispatch_package_fk")
+  vehicleTransport VehicleTransport? @relation(fields: [referenceId], references: [id], map: "dispatch_vehicle_transport_fk")
+
+  @@index([serviceType, referenceId])
+  @@index([status])
+  @@index([assignedDriverId])
+  @@map("dispatches")
+}
+
+model DispatchAttempt {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dispatchId  String   @db.Uuid
+  driverId    String   @db.Uuid
+  sentAt      DateTime @default(now())
+  respondedAt DateTime?
+  accepted    Boolean?
+  rejectReason String?
+  timeoutAt   DateTime
+
+  dispatch    Dispatch @relation(fields: [dispatchId], references: [id], onDelete: Cascade)
+  driver      Driver   @relation(fields: [driverId], references: [id])
+
+  @@index([dispatchId])
+  @@index([driverId])
+  @@map("dispatch_attempts")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DELIVERY PROOF
+// ─────────────────────────────────────────────────────────────────────────────
+
+model DeliveryProof {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  packageId    String    @unique @db.Uuid
+  photoUrl     String?
+  signature    String?
+  otp          String?
+  recipientName String?
+  notes        String?
+  latitude     Float?
+  longitude    Float?
+  createdAt    DateTime  @default(now())
+
+  package      Package   @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_proofs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRACKING
+// ─────────────────────────────────────────────────────────────────────────────
+
+model TrackingEvent {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  serviceType   ServiceType
+  referenceId   String      @db.Uuid
+  driverId      String?     @db.Uuid
+  status        String
+  latitude      Float?
+  longitude     Float?
+  heading       Float?
+  speed         Float?
+  description   String?
+  metadata      Json?
+  timestamp     DateTime    @default(now())
+
+  foodOrder     FoodOrder?  @relation(fields: [referenceId], references: [id], map: "tracking_food_order_fk")
+  ride          Ride?       @relation(fields: [referenceId], references: [id], map: "tracking_ride_fk")
+  package       Package?    @relation(fields: [referenceId], references: [id], map: "tracking_package_fk")
+  vehicleTransport VehicleTransport? @relation(fields: [referenceId], references: [id], map: "tracking_vehicle_fk")
+
+  @@index([serviceType, referenceId])
+  @@index([driverId])
+  @@index([timestamp])
+  @@map("tracking_events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Payment {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String        @db.Uuid
+  serviceType       ServiceType
+  referenceId       String        @db.Uuid
+  amount            Float
+  currency          String        @default("INR")
+  method            PaymentMethod
+  provider          PaymentProvider?
+  providerOrderId   String?
+  providerPaymentId String?
+  providerSignature String?
+  status            PaymentStatus @default(PENDING)
+  description       String?
+  metadata          Json?
+  failureReason     String?
+  refunds           Refund[]
+  paidAt            DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user              User          @relation(fields: [userId], references: [id])
+  foodOrder         FoodOrder?    @relation(fields: [referenceId], references: [id], map: "payment_food_order_fk")
+  ride              Ride?         @relation(fields: [referenceId], references: [id], map: "payment_ride_fk")
+  package           Package?      @relation(fields: [referenceId], references: [id], map: "payment_package_fk")
+  vehicleTransport  VehicleTransport? @relation(fields: [referenceId], references: [id], map: "payment_vehicle_fk")
+
+  @@index([userId])
+  @@index([serviceType, referenceId])
+  @@index([status])
+  @@index([providerPaymentId])
+  @@map("payments")
+}
+
+model Refund {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paymentId       String        @db.Uuid
+  amount          Float
+  reason          String
+  providerRefundId String?
+  status          PaymentStatus @default(PENDING)
+  processedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  payment         Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@map("refunds")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WALLET
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Wallet {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String?  @unique @db.Uuid
+  driverId    String?  @unique @db.Uuid
+  balance     Float    @default(0)
+  currency    String   @default("INR")
+  isLocked    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  driver      Driver?  @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id          String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  walletId    String                  @db.Uuid
+  type        WalletTransactionType
+  reason      WalletTransactionReason
+  amount      Float
+  balanceBefore Float
+  balanceAfter  Float
+  referenceId String?
+  description String?
+  metadata    Json?
+  createdAt   DateTime                @default(now())
+
+  wallet      Wallet                  @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+  @@index([createdAt])
+  @@map("wallet_transactions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RATINGS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Rating {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  raterId     String       @db.Uuid
+  ratedUserId String?      @db.Uuid
+  ratedDriverId String?    @db.Uuid
+  ratedRestaurantId String? @db.Uuid
+  serviceType ServiceType
+  referenceId String       @db.Uuid
+  target      RatingTarget
+  score       Float        // 1-5
+  comment     String?
+  tags        String[]     // "On time", "Great food", etc.
+  isAnonymous Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+
+  rater           User        @relation("RaterUser", fields: [raterId], references: [id])
+  ratedUser       User?       @relation("RatedUser", fields: [ratedUserId], references: [id])
+  ratedDriver     Driver?     @relation("RatedDriver", fields: [ratedDriverId], references: [id])
+  ratedRestaurant Restaurant? @relation("RatedRestaurant", fields: [ratedRestaurantId], references: [id])
+  foodOrder       FoodOrder?  @relation(fields: [referenceId], references: [id], map: "rating_food_order_fk")
+  ride            Ride?       @relation(fields: [referenceId], references: [id], map: "rating_ride_fk")
+  package         Package?    @relation(fields: [referenceId], references: [id], map: "rating_package_fk")
+  vehicleTransport VehicleTransport? @relation(fields: [referenceId], references: [id], map: "rating_vehicle_fk")
+
+  @@index([ratedDriverId])
+  @@index([ratedRestaurantId])
+  @@index([serviceType, referenceId])
+  @@map("ratings")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTIFICATIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Notification {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String             @db.Uuid
+  title       String
+  body        String
+  data        Json?
+  channel     NotificationChannel @default(PUSH)
+  status      NotificationStatus  @default(PENDING)
+  isRead      Boolean            @default(false)
+  readAt      DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime           @default(now())
+
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUPPORT
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SupportTicket {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketNumber    String         @unique
+  customerId      String         @db.Uuid
+  assignedToId    String?        @db.Uuid
+  serviceType     ServiceType?
+  referenceId     String?        @db.Uuid
+  subject         String
+  description     String
+  status          TicketStatus   @default(OPEN)
+  priority        TicketPriority @default(MEDIUM)
+  tags            String[]
+  resolvedAt      DateTime?
+  closedAt        DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  customer        User           @relation("CustomerTickets", fields: [customerId], references: [id])
+  messages        SupportMessage[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([ticketNumber])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketId    String        @db.Uuid
+  senderId    String        @db.Uuid
+  senderRole  UserRole
+  content     String
+  attachments String[]
+  isInternal  Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@map("support_messages")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COUPONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Coupon {
+  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code             String      @unique
+  description      String
+  type             CouponType
+  value            Float
+  minOrderAmount   Float       @default(0)
+  maxDiscount      Float?
+  serviceTypes     ServiceType[]
+  usageLimit       Int?
+  usedCount        Int         @default(0)
+  perUserLimit     Int         @default(1)
+  isActive         Boolean     @default(true)
+  startAt          DateTime
+  expiresAt        DateTime
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  usages           CouponUsage[]
+
+  @@index([code])
+  @@index([isActive])
+  @@map("coupons")
+}
+
+model CouponUsage {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  couponId   String   @db.Uuid
+  userId     String   @db.Uuid
+  referenceId String? @db.Uuid
+  discount   Float
+  usedAt     DateTime @default(now())
+
+  coupon     Coupon   @relation(fields: [couponId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([couponId, userId, referenceId])
+  @@index([couponId])
+  @@index([userId])
+  @@map("coupon_usages")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUSINESSES
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Business {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId         String   @unique @db.Uuid
+  name            String
+  slug            String   @unique
+  type            String   // ECOMMERCE, PHARMACY, GROCERY, etc.
+  logo            String?
+  phone           String
+  email           String
+  address         String
+  city            String
+  country         String   @default("IN")
+  gstNumber       String?
+  isVerified      Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  apiKey          String?  @unique
+  webhookUrl      String?
+  commissionRate  Float    @default(15)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner           User           @relation(fields: [ownerId], references: [id])
+  shipments       BusinessShipment[]
+
+  @@index([ownerId])
+  @@map("businesses")
+}
+
+model BusinessShipment {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  businessId      String        @db.Uuid
+  trackingNumber  String        @unique
+  status          PackageStatus @default(PENDING)
+  packageDetails  Json
+  pickupAddress   Json
+  deliveryAddress Json
+  weight          Float
+  totalFare       Float
+  externalOrderId String?
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  business        Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([trackingNumber])
+  @@map("business_shipments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AdminUser {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String   @unique
+  name        String
+  passwordHash String
+  role        UserRole @default(ADMIN)
+  isActive    Boolean  @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  auditLogs   AuditLog[]
+
+  @@map("admin_users")
+}
+
+model AuditLog {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  adminId     String    @db.Uuid
+  action      String
+  entity      String
+  entityId    String?
+  before      Json?
+  after       Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  admin       AdminUser @relation(fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model SystemConfig {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key       String   @unique
+  value     Json
+  category  String?
+  updatedAt DateTime @updatedAt
+
+  @@map("system_config")
+}

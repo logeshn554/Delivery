@@ -1,0 +1,32 @@
+{
+  "name": "delivery-super-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "All-in-One Delivery & Mobility Super App",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "db:migrate": "pnpm --filter @delivery/database migrate:dev",
+    "db:migrate:prod": "pnpm --filter @delivery/database migrate:deploy",
+    "db:seed": "pnpm --filter @delivery/database seed",
+    "db:studio": "pnpm --filter @delivery/database studio",
+    "db:reset": "pnpm --filter @delivery/database migrate:reset",
+    "generate": "turbo run generate",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "prettier": "^3.2.4",
+    "turbo": "^1.12.4",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.14.1"
+}

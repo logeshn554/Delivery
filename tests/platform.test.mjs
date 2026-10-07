@@ -1,0 +1,62 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+process.env.DATABASE_PATH=path.join(mkdtempSync(path.join(tmpdir(),'goserve-test-')),'test.sqlite');
+process.env.PUBLIC_ORIGIN='http://localhost:8000';
+process.env.ADMIN_EMAIL='admin@example.test';
+process.env.ADMIN_PASSWORD='administrator-pass-123';
+const {server}=await import('../server.mjs');
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+const base=`http://127.0.0.1:${server.address().port}`;
+async function request(route,data,cookie=''){const r=await fetch(base+route,{method:data?'POST':'GET',headers:{Origin:process.env.PUBLIC_ORIGIN,'Content-Type':'application/json',Cookie:cookie},body:data?JSON.stringify(data):undefined});return {status:r.status,body:await r.json(),cookie:r.headers.get('set-cookie')?.split(';')[0]};}
+async function account(email,role){const d={name:'Test '+role,email,password:'a-strong-passphrase-123',role};assert.equal((await request('/api/auth/register',d)).status,201);return (await request('/api/auth/login',d)).cookie;}
+test('booking, approvals, dispatch, tracking and role isolation',async()=>{
+  const streamAbort=new AbortController();
+  try {
+    const customer=await account('customer@example.test','customer'),other=await account('other@example.test','customer'),partner=await account('partner@example.test','partner');
+    const admin=(await request('/api/auth/login',{email:process.env.ADMIN_EMAIL,password:process.env.ADMIN_PASSWORD})).cookie;
+    const live=await fetch(base+'/api/stream',{headers:{Cookie:customer},signal:streamAbort.signal});assert.equal(live.status,200);const reader=live.body.getReader();assert.match(new TextDecoder().decode((await reader.read()).value),/event: ready/);
+    assert.equal((await request('/api/auth/register',{name:'Intruder',email:'intruder@example.test',password:'strong-password-123',role:'admin'})).status,400);
+    const payload={service:'package',pickup:'123 Pickup Street',destination:'456 Destination Street',note:'Small parcel',requestId:'test-request-001'};
+    const made=await request('/api/orders',payload,customer);assert.equal(made.status,201);const id=made.body.order.id;
+    assert.match(new TextDecoder().decode((await reader.read()).value),/event: refresh/);streamAbort.abort();
+    const retry=await request('/api/orders',payload,customer);assert.equal(retry.status,200);assert.equal(retry.body.order.id,id);
+    assert.equal((await request('/api/orders/'+id,undefined,other)).status,403);
+    assert.equal((await request('/api/orders/'+id+'/accept',{},partner)).status,403);
+    const partners=(await request('/api/admin/partners',undefined,admin)).body.partners;
+    assert.equal((await request('/api/admin/partners',{id:partners[0].id,approved:true},customer)).status,403);
+    assert.equal((await request('/api/admin/partners',{id:partners[0].id,approved:true},admin)).status,200);
+    assert.equal((await request('/api/orders/'+id+'/accept',{},partner)).status,200);
+    assert.equal((await request('/api/orders/'+id+'/accept',{},partner)).status,409);
+    assert.equal((await request('/api/orders/'+id+'/status',{status:'completed'},partner)).status,409);
+    assert.equal((await request('/api/orders/'+id+'/location',{lat:12.97,lng:77.59,accuracy:8},customer)).status,403);
+    assert.equal((await request('/api/orders/'+id+'/location',{lat:100,lng:77.59,accuracy:8},partner)).status,400);
+    assert.equal((await request('/api/orders/'+id+'/location',{lat:12.97,lng:77.59,accuracy:8},partner)).status,200);
+    assert.equal((await request('/api/orders/'+id,undefined,customer)).body.order.location.lat,12.97);
+    for(const status of ['arriving','picked_up','in_transit','completed'])assert.equal((await request('/api/orders/'+id+'/status',{status},partner)).status,200);
+    const completed=(await request('/api/orders/'+id,undefined,customer)).body.order;assert.equal(completed.status,'completed');assert.equal(completed.location,null);assert.equal(completed.events.length,6);
+    assert.equal((await request('/api/orders/'+id+'/location',{lat:12.97,lng:77.59,accuracy:8},partner)).status,403);
+    assert.equal((await request('/api/tickets',{subject:'Delivery question',message:'Please help with my package.'},customer)).status,201);
+    assert.equal((await request('/api/tickets',undefined,other)).body.tickets.length,0);
+    const ticket=(await request('/api/tickets',undefined,customer)).body.tickets[0];assert.equal((await request('/api/admin/tickets',{id:ticket.id,status:'resolved'},customer)).status,403);assert.equal((await request('/api/admin/tickets',{id:ticket.id,status:'resolved'},admin)).status,200);
+    const second=(await request('/api/orders',{service:'ride',pickup:'ಬೆಂಗಳೂರು Pickup Street',destination:'456 Destination Street'},customer)).body.order;
+    assert.equal((await request('/api/admin/assign',{orderId:second.id,partnerId:partners[0].id},customer)).status,403);
+    assert.equal((await request('/api/admin/assign',{orderId:second.id,partnerId:partners[0].id},admin)).status,200);
+    assert.equal((await request('/api/admin/partners',{id:partners[0].id,approved:false},admin)).status,200);
+    assert.equal((await request('/api/orders/'+second.id+'/location',{lat:12.97,lng:77.59,accuracy:8},partner)).status,403);
+    const blocked=await fetch(base+'/api/orders',{method:'POST',headers:{Origin:'https://untrusted.example','Content-Type':'application/json',Cookie:customer},body:'{}'});assert.equal(blocked.status,403);
+    assert.equal((await fetch(base+'/.env')).status,404);
+    assert.equal((await fetch(base+'/server.mjs')).status,404);
+    const nativeLogin=await request('/api/auth/login',{email:'other@example.test',password:'a-strong-passphrase-123',native:true});assert.match(nativeLogin.body.sessionToken,/^[a-f0-9]{64}$/);
+    const bearer={Authorization:'Bearer '+nativeLogin.body.sessionToken,'Content-Type':'application/json'};
+    assert.equal((await fetch(base+'/api/me',{headers:bearer})).status,200);
+    assert.equal((await fetch(base+'/api/v1/me',{headers:bearer})).status,200);
+    assert.equal((await fetch(base+'/api/v1/admin/partners',{headers:bearer})).status,403);
+    assert.equal((await fetch(base+'/api/tickets',{method:'POST',headers:bearer,body:JSON.stringify({subject:'Mobile request',message:'Help from the native mobile app.'})})).status,201);
+    assert.equal((await fetch(base+'/api/auth/logout',{method:'POST',headers:bearer,body:'{}'})).status,200);
+    assert.equal((await fetch(base+'/api/me',{headers:bearer})).status,401);
+    assert.equal((await request('/api/auth/logout',{},customer)).status,200);assert.equal((await request('/api/me',undefined,customer)).status,401);
+  }finally{streamAbort.abort();await new Promise(resolve=>server.close(resolve));}
+});

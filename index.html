@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f8f4">
+    <meta name="description" content="GoServe brings rides, food, and deliveries together in one simple app.">
+    <title>GoServe — Everything in motion</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="announcement"><span class="pulse"></span> One city. One tap. We’ll take it from here. <a href="#services">See how it works <span aria-hidden="true">↗</span></a></div>
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="GoServe home"><span class="brand-mark">g<span>↗</span></span><span>goserve<span class="brand-dot">.</span></span></a>
+      <nav class="desktop-nav" aria-label="Main navigation"><a href="#services">Explore</a><a href="#how">How it works</a><a href="#track">Track a delivery</a></nav>
+      <div class="header-actions"><button class="location-button" id="locationButton"><span class="pin">⌖</span><span id="locationLabel">Set your location</span><span class="chevron">⌄</span></button><button class="login-button" id="loginButton">Sign in <span aria-hidden="true">↗</span></button></div>
+    </header>
+
+    <main id="home">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-line"></span> YOUR CITY, IN MOTION <span class="eyebrow-line"></span></div>
+          <h1>Whatever you need.<br><em>We’re on our way.</em></h1>
+          <p class="hero-text">A ride across town. Lunch at your door. Something important on its way. Meet your city’s new go-to.</p>
+          <div class="hero-cta"><a class="button button-dark" href="#services">Get started <span>↗</span></a><button class="text-button" id="exploreButton"><span class="play">▶</span> See how it works</button></div>
+          <div class="trust-row"><div class="avatar-stack"><span>AR</span><span>MK</span><span>SP</span><span class="avatar-plus">+</span></div><div><strong>A little more time for you.</strong><small>And a whole lot less figuring it out.</small></div></div>
+        </div>
+        <div class="hero-visual" aria-label="Illustration of GoServe delivery moving through a city">
+          <div class="sun-shape"></div><div class="city-lines"><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="route route-one"></div><div class="route route-two"></div>
+          <div class="map-label label-home"><span>⌂</span> HOME</div><div class="map-label label-drop"><span>✦</span> YOUR PLACE</div>
+          <div class="scooter-wrap"><div class="scooter-shadow"></div><div class="scooter"><span class="scooter-box">g<span>↗</span></span><span class="scooter-body"></span><span class="wheel wheel-a"></span><span class="wheel wheel-b"></span><span class="scooter-rider">●</span></div></div>
+          <div class="float-card card-arrival"><span class="arrival-icon">↗</span><span><strong>On the way</strong><small>Right around the corner</small></span><span class="live-dot"></span></div>
+          <div class="float-card card-rating"><span class="star">✦</span><strong>5</strong><small>Ways to move</small></div>
+          <div class="hero-caption">GOOD THINGS ARE<br>ALREADY MOVING <span>✳</span></div>
+        </div>
+      </section>
+
+      <section class="services-section" id="services">
+        <div class="section-heading"><div><div class="eyebrow left-eyebrow">THE CITY, AT YOUR SERVICE</div><h2>What’s the plan <span>today?</span></h2></div><span class="section-note">A few taps. Consider it handled.</span></div>
+        <div class="service-grid">
+          <button class="service-card service-food" data-service="Food"><span class="service-icon icon-food">✳</span><span class="service-index">01 / EAT</span><strong>Food, sorted.</strong><small>Something good is closer than you think.</small><span class="service-arrow">↗</span><span class="food-art"><i></i><b>✿</b></span></button>
+          <button class="service-card service-ride" data-service="Ride"><span class="service-icon icon-ride">↗</span><span class="service-index">02 / GO</span><strong>Let’s get you there.</strong><small>Easy rides for wherever life takes you.</small><span class="service-arrow">↗</span><span class="ride-art"><i></i><b></b></span></button>
+          <button class="service-card service-parcel" data-service="Package"><span class="service-icon icon-parcel">▦</span><span class="service-index">03 / SEND</span><strong>Send a little something.</strong><small>From your hands to theirs, with care.</small><span class="service-arrow">↗</span><span class="parcel-art"><i>g<span>↗</span></i></span></button>
+          <button class="service-card service-more" data-service="More"><span class="service-icon icon-more">✳</span><span class="service-index">04 / MORE</span><strong>Big things can move.</strong><small>Vehicle transport and business deliveries.</small><span class="service-arrow">↗</span><span class="more-art">↗</span></button>
+        </div>
+      </section>
+
+      <section class="tracking-section" id="track">
+        <div class="tracking-copy"><div class="eyebrow left-eyebrow">A LITTLE PEACE OF MIND</div><h2>Already sent<br><em>something?</em></h2><p>That little package is on its way. Get the latest update here.</p><form class="tracking-form" id="trackingForm"><label class="sr-only" for="trackingId">Tracking number</label><span>⌕</span><input id="trackingId" name="trackingId" placeholder="Your tracking number" autocomplete="off"><button type="submit" aria-label="Track package">↗</button></form><div class="tracking-result" id="trackingResult" aria-live="polite"></div><small class="demo-note">Demo preview · Live order tracking will be available when service launches.</small></div>
+        <div class="tracking-map"><div class="map-grid"><div class="map-road road-a"></div><div class="map-road road-b"></div><div class="map-road road-c"></div><div class="map-block block-a"></div><div class="map-block block-b"></div><div class="map-block block-c"></div><div class="map-block block-d"></div><div class="map-block block-e"></div><div class="map-river"></div><div class="map-route"></div><span class="map-marker marker-start">⌂</span><span class="map-marker marker-end">✦</span><span class="map-rider">⌁</span><span class="map-distance">ON THE MOVE <b>·</b> 2.4 KM</span></div><div class="map-info"><span class="map-live"><i></i> PREVIEW</span><strong>Your delivery, at a glance.</strong><small>Example route · Bengaluru</small></div></div>
+      </section>
+
+      <section class="how-section" id="how"><div class="how-heading"><div class="eyebrow">EASY AS IT SHOULD BE</div><h2>More living.<br><em>Less logistics.</em></h2></div><div class="steps"><article><span>01</span><b>Tell us what you need</b><p>Pick a service and add the little details.</p></article><article><span>02</span><b>We’ll make it happen</b><p>Your local GoServe partner takes it from here.</p></article><article><span>03</span><b>Stay in the loop</b><p>See what’s happening, right when it does.</p></article></div></section>
+      <section class="partner-banner"><div><div class="eyebrow">GOOD PEOPLE, GOING PLACES</div><h2>Make your day<br><em>go a little further.</em></h2><p>Bring a little more motion to your workday. Partner interest opens with our first service area.</p></div><a href="/partner" class="button button-light">I’m interested <span>↗</span></a><div class="banner-orbit orbit-one"></div><div class="banner-orbit orbit-two"></div></section>
+    </main>
+    <footer><a class="brand footer-brand" href="#home"><span class="brand-mark">g<span>↗</span></span><span>goserve<span class="brand-dot">.</span></span></a><span>One city, a little more in motion.</span><div><a href="#services">Explore</a><a href="#track">Track</a><a href="/app">Say hello</a></div><small>© <span id="year"></span> GoServe · A concept preview</small></footer>
+    <dialog id="serviceDialog" class="service-dialog"><button class="dialog-close" id="dialogClose" aria-label="Close">×</button><div class="dialog-mark">g↗</div><div class="eyebrow">A GOOD PLACE TO START</div><h2 id="dialogTitle">Coming to your city.</h2><p id="dialogText">We’re getting the GoServe experience ready. Leave us your interest and we’ll share an update when bookings open.</p><form id="interestForm"><label for="interestEmail">Your email</label><div class="email-row"><input type="email" id="interestEmail" placeholder="you@example.com" required><button class="button button-dark" type="submit">Keep me posted ↗</button></div></form><p class="dialog-confirm" id="dialogConfirm" aria-live="polite"></p></dialog>
+    <script src="app.js" defer></script>
+  </body>
+</html>
+

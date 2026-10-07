@@ -1,0 +1,1 @@
+{"name":"@goserve/customer-web","version":"0.1.0","private":true,"type":"module","scripts":{"dev":"next dev -p 3000","build":"next build","start":"next start -p 3000"},"dependencies":{"next":"16.3.8","react":"19.2.3","react-dom":"19.2.3","@goserve/web-gateway":"*"}}
