@@ -37,6 +37,5 @@ mobile/ios/
 apps/*/android/
 apps/*/ios/
 
-# OS files
-.DS_Store
-Thumbs.db
+# Scratch
+scratch/

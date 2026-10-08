@@ -100,6 +100,18 @@ db.exec(`
     comment  TEXT NOT NULL DEFAULT '',
     created  TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS wallets(
+    user_id TEXT PRIMARY KEY REFERENCES users(id),
+    balance_paise INTEGER NOT NULL DEFAULT 125000,
+    updated TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS chat_messages(
+    id TEXT PRIMARY KEY,
+    order_id TEXT NOT NULL,
+    sender TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created TEXT NOT NULL
+  );
 `);
 
 // Schema migrations: add columns that may be missing on existing databases
@@ -141,6 +153,132 @@ if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
     db.prepare('INSERT INTO users VALUES(?,?,?,?,?,?,?)')
       .run(randomUUID(), 'Operations administrator', email, passwordHash(process.env.ADMIN_PASSWORD), 'admin', 1, now());
 }
+
+// Seed demo user Logesh & partner Ravi Kumar
+const demoUserId = 'user-logesh-001';
+const demoEmail = 'logesh@goserve.in';
+if (!db.prepare('SELECT id FROM users WHERE email=?').get(demoEmail)) {
+  db.prepare('INSERT OR IGNORE INTO users VALUES(?,?,?,?,?,?,?)')
+    .run(demoUserId, 'Logesh', demoEmail, passwordHash('logesh-pass-123'), 'customer', 1, now());
+}
+const partnerRaviId = 'partner-ravi-001';
+const raviEmail = 'ravi.partner@goserve.in';
+if (!db.prepare('SELECT id FROM users WHERE email=?').get(raviEmail)) {
+  db.prepare('INSERT OR IGNORE INTO users VALUES(?,?,?,?,?,?,?)')
+    .run(partnerRaviId, 'Ravi Kumar', raviEmail, passwordHash('ravi-pass-123'), 'partner', 1, now());
+}
+
+function activeUser(req) {
+  return session(req) || db.prepare("SELECT * FROM users WHERE email='logesh@goserve.in'").get() || { id: demoUserId, name: 'Logesh', email: demoEmail, role: 'customer' };
+}
+
+const RESTAURANTS = [
+  {
+    id: 'rest-behrouz',
+    name: 'Behrouz Biryani',
+    tagline: 'The Royal Biryani',
+    cuisines: 'Biryani • North Indian • Mughlai',
+    rating: 4.5,
+    ratingCount: '12K+',
+    deliveryTime: '30-40 mins',
+    discount: '20% OFF',
+    discountCode: 'ROYAL20',
+    distanceKm: 3.2,
+    image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&auto=format&fit=crop&q=80',
+    dishes: [
+      { id: 'dish-bb-1', name: 'Dum Gosht Biryani', price: 480, rating: 4.6, desc: 'Tender mutton layered with royal basmati rice & saffron.', veg: false, image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&auto=format&fit=crop&q=80' },
+      { id: 'dish-bb-2', name: 'Shahi Paneer Biryani', price: 360, rating: 4.4, desc: 'Fresh cottage cheese cubes marinated in aromatic spices.', veg: true, image: 'https://images.unsplash.com/photo-1645177628172-a94c1f96e6db?w=400&auto=format&fit=crop&q=80' },
+      { id: 'dish-bb-3', name: 'Murgh Tikka Biryani', price: 420, rating: 4.7, desc: 'Charcoal grilled chicken tikka layered with aged basmati.', veg: false, image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=400&auto=format&fit=crop&q=80' },
+    ]
+  },
+  {
+    id: 'rest-dominos',
+    name: "Domino's Pizza",
+    tagline: 'Hot & Fresh in 30 Mins',
+    cuisines: 'Pizza • Fast Food • Beverages',
+    rating: 4.3,
+    ratingCount: '18K+',
+    deliveryTime: '25-35 mins',
+    discount: '50% OFF',
+    discountCode: 'DOMINOS50',
+    distanceKm: 2.1,
+    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=80',
+    dishes: [
+      { id: 'dish-dom-1', name: 'Farmhouse Veggie Pizza', price: 320, rating: 4.4, desc: 'Delightful combo of onion, capsicum, tomato & mushroom.', veg: true, image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&auto=format&fit=crop&q=80' },
+      { id: 'dish-dom-2', name: 'Pepper Barbecue Chicken Pizza', price: 440, rating: 4.5, desc: 'Pepper barbecue chicken for that flavorful kick.', veg: false, image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&auto=format&fit=crop&q=80' },
+      { id: 'dish-dom-3', name: 'Garlic Breadsticks with Dip', price: 140, rating: 4.6, desc: 'Crispy baked breadsticks brushed with garlic butter.', veg: true, image: 'https://images.unsplash.com/photo-1619895092538-128341789043?w=400&auto=format&fit=crop&q=80' },
+    ]
+  },
+  {
+    id: 'rest-kfc',
+    name: 'KFC',
+    tagline: "It's Finger Lickin' Good",
+    cuisines: 'Burgers • Chicken • Fast Food',
+    rating: 4.2,
+    ratingCount: '10K+',
+    deliveryTime: '25-35 mins',
+    discount: '30% OFF',
+    discountCode: 'KFCSPECIAL',
+    distanceKm: 2.8,
+    image: 'https://images.unsplash.com/photo-1513639776629-7b61b0ac49cb?w=600&auto=format&fit=crop&q=80',
+    dishes: [
+      { id: 'dish-kfc-1', name: 'Zinger Burger Meal', price: 299, rating: 4.3, desc: 'Crunchy chicken zinger with fries and regular soft drink.', veg: false, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&auto=format&fit=crop&q=80' },
+      { id: 'dish-kfc-2', name: 'Hot & Crispy Chicken (4 pcs)', price: 399, rating: 4.5, desc: '4 pieces of signature spicy crunchy fried chicken.', veg: false, image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400&auto=format&fit=crop&q=80' },
+      { id: 'dish-kfc-3', name: 'Popcorn Chicken Large', price: 249, rating: 4.4, desc: 'Bite-sized chicken pops fried to crispy golden brown.', veg: false, image: 'https://images.unsplash.com/photo-1562967914-608f82629710?w=400&auto=format&fit=crop&q=80' },
+    ]
+  },
+  {
+    id: 'rest-a2b',
+    name: 'A2B - Adyar Ananda Bhavan',
+    tagline: 'Authentic South Indian Sweets & Savouries',
+    cuisines: 'South Indian • Chinese • Snacks',
+    rating: 4.4,
+    ratingCount: '8K+',
+    deliveryTime: '20-30 mins',
+    discount: 'Free Delivery',
+    discountCode: 'A2BFREE',
+    distanceKm: 1.5,
+    image: 'https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?w=600&auto=format&fit=crop&q=80',
+    dishes: [
+      { id: 'dish-a2b-1', name: 'Special Masala Dosa', price: 130, rating: 4.7, desc: 'Crispy golden crepe filled with spiced potato masala.', veg: true, image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=400&auto=format&fit=crop&q=80' },
+      { id: 'dish-a2b-2', name: 'Ghee Podi Idli (4 pcs)', price: 110, rating: 4.8, desc: 'Mini button idlis tossed in pure aromatic ghee & podi.', veg: true, image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=400&auto=format&fit=crop&q=80' },
+      { id: 'dish-a2b-3', name: 'South Indian Thali Meals', price: 220, rating: 4.5, desc: 'Full traditional meal with sambar, rasam, kootu & poriyal.', veg: true, image: 'https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?w=400&auto=format&fit=crop&q=80' },
+    ]
+  },
+  {
+    id: 'rest-mcd',
+    name: "McDonald's",
+    tagline: "I'm Lovin' It",
+    cuisines: 'Burgers • Beverages • Fast Food',
+    rating: 4.4,
+    ratingCount: '25K+',
+    deliveryTime: '20-30 mins',
+    discount: 'Flat ₹100 OFF',
+    discountCode: 'MCD100',
+    distanceKm: 1.9,
+    image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&auto=format&fit=crop&q=80',
+    dishes: [
+      { id: 'dish-mcd-1', name: 'McSpicy Chicken Burger', price: 190, rating: 4.6, desc: 'Tender juicy chicken patty coated with spicy crispy batter.', veg: false, image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=400&auto=format&fit=crop&q=80' },
+      { id: 'dish-mcd-2', name: 'McVeggie Burger', price: 150, rating: 4.3, desc: 'Crunchy potato and peas patty topped with creamy mayo.', veg: true, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&auto=format&fit=crop&q=80' },
+      { id: 'dish-mcd-3', name: 'Peri Peri Fries (Large)', price: 120, rating: 4.7, desc: 'Crispy salted french fries with spicy peri-peri seasoning.', veg: true, image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=400&auto=format&fit=crop&q=80' },
+    ]
+  }
+];
+
+const POPULAR_DISHES = [
+  { id: 'pop-1', name: 'Chicken Biryani', restaurant: 'Behrouz Biryani', price: 340, rating: 4.7, image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=300&auto=format&fit=crop&q=80' },
+  { id: 'pop-2', name: 'Paneer Butter Masala', restaurant: 'Punjabi Rasoi', price: 260, rating: 4.6, image: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=300&auto=format&fit=crop&q=80' },
+  { id: 'pop-3', name: 'Masala Dosa', restaurant: 'A2B Adyar Ananda Bhavan', price: 130, rating: 4.8, image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=300&auto=format&fit=crop&q=80' },
+  { id: 'pop-4', name: 'Chicken Burger', restaurant: 'KFC', price: 199, rating: 4.5, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&auto=format&fit=crop&q=80' },
+  { id: 'pop-5', name: 'Veg Fried Rice', restaurant: 'Wok Express', price: 180, rating: 4.4, image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=300&auto=format&fit=crop&q=80' },
+];
+
+const RIDE_OPTIONS = [
+  { id: 'auto', name: 'Auto', icon: '🛺', priceMin: 120, priceMax: 150, etaMins: 2, desc: 'Affordable for short rides', speed: 'Fast in traffic' },
+  { id: 'bike', name: 'Bike', icon: '🏍️', priceMin: 90, priceMax: 120, etaMins: 3, desc: 'Beat the traffic', speed: 'Fastest' },
+  { id: 'hatchback', name: 'Car (Hatchback)', icon: '🚗', priceMin: 250, priceMax: 320, etaMins: 4, desc: 'Comfortable rides', speed: 'AC Comfort' },
+  { id: 'suv', name: 'Car (SUV)', icon: '🚙', priceMin: 350, priceMax: 450, etaMins: 5, desc: 'Extra space & comfort', speed: 'Premium AC' },
+];
 
 // ─── SSE broadcast ───────────────────────────────────────────────────────────
 const streams = new Set();
@@ -274,7 +412,7 @@ export const server = http.createServer(async (req, res) => {
     "script-src 'self' https://maps.googleapis.com https://maps.gstatic.com https://checkout.razorpay.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com",
+    "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com https://images.unsplash.com",
     "connect-src 'self' https://*.googleapis.com https://api.razorpay.com",
     "frame-src https://api.razorpay.com",
     "frame-ancestors 'none'", "object-src 'none'", "base-uri 'self'", "form-action 'self'",
@@ -681,6 +819,206 @@ export const server = http.createServer(async (req, res) => {
       auditLog(u.id, 'update_ticket', b.id);
       broadcast();
       return json(200, { ok: true });
+    }
+
+    // ── Super App: Food Delivery ──────────────────────────────────────────────
+    if (route === '/api/food/restaurants' && method === 'GET') {
+      return json(200, { restaurants: RESTAURANTS });
+    }
+    if (route === '/api/food/dishes' && method === 'GET') {
+      return json(200, { dishes: POPULAR_DISHES });
+    }
+    if (route === '/api/food/order' && method === 'POST') {
+      const u = activeUser(req);
+      const b = await body(req);
+      const id = 'OD' + randomInt(100000, 999999);
+      const items = Array.isArray(b.items) ? b.items : [];
+      const totalPaise = Math.max(1000, Number(b.totalPaise) || 42000);
+      const restaurantName = b.restaurantName || "McDonald's";
+      const pickupAddr = restaurantName + ', Anna Nagar, Chennai';
+      const destAddr = b.destination || '4th Avenue, Anna Nagar, Chennai';
+      const details = JSON.stringify({
+        restaurantName,
+        items,
+        note: b.note || 'Contactless delivery',
+        estimatedMinutes: 8,
+        partnerName: 'Ravi Kumar',
+        partnerPhone: '+91 98765 43210',
+        vehicle: 'TVS Apache • TN 09 AB 1234',
+        rating: 4.8,
+        trips: '2.1K trips',
+      });
+      db.prepare(`
+        INSERT INTO orders(id, customer_id, partner_id, service, pickup, destination, details, status, price_paise, payment_status, created, updated)
+        VALUES(?, ?, ?, 'food', ?, ?, ?, 'in_transit', ?, 'paid', ?, ?)
+      `).run(id, u.id, partnerRaviId, pickupAddr, destAddr, details, totalPaise, now(), now());
+
+      db.prepare('INSERT INTO events(order_id, actor_id, status, created) VALUES(?,?,?,?)').run(id, partnerRaviId, 'accepted', now());
+      db.prepare('INSERT INTO events(order_id, actor_id, status, created) VALUES(?,?,?,?)').run(id, partnerRaviId, 'picked_up', now());
+      db.prepare('INSERT INTO events(order_id, actor_id, status, created) VALUES(?,?,?,?)').run(id, partnerRaviId, 'in_transit', now());
+      db.prepare('INSERT OR REPLACE INTO locations(order_id, lat, lng, accuracy, updated) VALUES(?,?,?,?,?)')
+        .run(id, 13.0850, 80.2150, 5, now());
+      broadcast();
+      const o = db.prepare('SELECT * FROM orders WHERE id=?').get(id);
+      return json(201, { order: orderView(o) });
+    }
+
+    // ── Super App: Pick Me (Rides) ────────────────────────────────────────────
+    if (route === '/api/rides/options' && method === 'GET') {
+      return json(200, { options: RIDE_OPTIONS });
+    }
+    if (route === '/api/rides/book' && method === 'POST') {
+      const u = activeUser(req);
+      const b = await body(req);
+      const id = 'RD' + randomInt(100000, 999999);
+      const pickup = b.pickup || 'Anna Nagar, Chennai';
+      const dest = b.destination || 'Chennai International Airport (MAA)';
+      const rideType = b.rideType || 'auto';
+      const selected = RIDE_OPTIONS.find(r => r.id === rideType) || RIDE_OPTIONS[0];
+      const pricePaise = ((b.price || selected.priceMin) * 100);
+      const details = JSON.stringify({
+        rideType: selected.name,
+        icon: selected.icon,
+        pickup,
+        destination: dest,
+        etaMinutes: selected.etaMins,
+        partnerName: 'Ravi Kumar',
+        partnerPhone: '+91 98765 43210',
+        vehicle: selected.id === 'auto' ? 'Bajaj RE Auto • TN 09 AC 5678' : 'Hyundai i20 • TN 09 AB 1234',
+        rating: 4.8,
+      });
+      db.prepare(`
+        INSERT INTO orders(id, customer_id, partner_id, service, pickup, destination, details, status, price_paise, payment_status, created, updated)
+        VALUES(?, ?, ?, 'ride', ?, ?, ?, 'in_transit', ?, 'paid', ?, ?)
+      `).run(id, u.id, partnerRaviId, pickup, dest, details, pricePaise, now(), now());
+      db.prepare('INSERT INTO events(order_id, actor_id, status, created) VALUES(?,?,?,?)').run(id, partnerRaviId, 'accepted', now());
+      db.prepare('INSERT INTO events(order_id, actor_id, status, created) VALUES(?,?,?,?)').run(id, partnerRaviId, 'in_transit', now());
+      db.prepare('INSERT OR REPLACE INTO locations(order_id, lat, lng, accuracy, updated) VALUES(?,?,?,?,?)')
+        .run(id, 13.0827, 80.2100, 5, now());
+      broadcast();
+      const o = db.prepare('SELECT * FROM orders WHERE id=?').get(id);
+      return json(201, { order: orderView(o) });
+    }
+
+    // ── Super App: Wallet ─────────────────────────────────────────────────────
+    if (route === '/api/wallet' && method === 'GET') {
+      const u = activeUser(req);
+      let w = db.prepare('SELECT * FROM wallets WHERE user_id=?').get(u.id);
+      if (!w) {
+        db.prepare('INSERT OR REPLACE INTO wallets VALUES(?,?,?)').run(u.id, 125000, now());
+        w = { balance_paise: 125000 };
+      }
+      return json(200, {
+        balancePaise: w.balance_paise,
+        balanceFormatted: '₹' + (w.balance_paise / 100).toFixed(2),
+        currency: 'INR',
+      });
+    }
+    if (route === '/api/wallet/topup' && method === 'POST') {
+      const u = activeUser(req);
+      const b = await body(req);
+      const addPaise = Math.max(10000, Number(b.amountPaise) || 50000);
+      let w = db.prepare('SELECT * FROM wallets WHERE user_id=?').get(u.id);
+      const newBal = (w ? w.balance_paise : 0) + addPaise;
+      db.prepare('INSERT OR REPLACE INTO wallets VALUES(?,?,?)').run(u.id, newBal, now());
+      return json(200, {
+        balancePaise: newBal,
+        balanceFormatted: '₹' + (newBal / 100).toFixed(2),
+        currency: 'INR',
+      });
+    }
+
+    // ── Super App: Driver Chat ────────────────────────────────────────────────
+    if (route.startsWith('/api/chat/') && method === 'GET') {
+      const orderId = route.slice('/api/chat/'.length);
+      const msgs = db.prepare('SELECT * FROM chat_messages WHERE order_id=? ORDER BY created ASC').all(orderId);
+      return json(200, { messages: msgs });
+    }
+    if (route === '/api/chat/send' && method === 'POST') {
+      const b = await body(req);
+      const orderId = b.orderId || 'OD123456';
+      const msgText = String(b.message || '').trim();
+      if (!msgText) fail(400, 'Message cannot be empty.');
+      const custMsgId = randomUUID();
+      db.prepare('INSERT INTO chat_messages VALUES(?,?,?,?,?)')
+        .run(custMsgId, orderId, 'customer', msgText, now());
+
+      // Auto reply from driver Ravi
+      const driverMsgId = randomUUID();
+      const replies = [
+        "Hi! Yes, I am on the way with your order. Will reach in a few minutes!",
+        "Got it! Reaching your location shortly. Please keep your phone handy.",
+        "Yes, I am near Shenoy Nagar now, taking the main road.",
+        "Sure, I will ring the bell as requested!",
+      ];
+      const replyText = replies[Math.floor(Math.random() * replies.length)];
+      db.prepare('INSERT INTO chat_messages VALUES(?,?,?,?,?)')
+        .run(driverMsgId, orderId, 'partner', replyText, new Date(Date.now() + 1000).toISOString());
+
+      const msgs = db.prepare('SELECT * FROM chat_messages WHERE order_id=? ORDER BY created ASC').all(orderId);
+      return json(200, { messages: msgs });
+    }
+
+    // ── Super App: Init & Recent Orders ───────────────────────────────────────
+    if (route === '/api/superapp/init' && method === 'GET') {
+      const u = activeUser(req);
+      let userOrders = db.prepare('SELECT * FROM orders WHERE customer_id=? ORDER BY created DESC LIMIT 10').all(u.id).map(orderView);
+      if (!userOrders.length) {
+        const od1 = 'OD123456';
+        const od2 = 'OD789012';
+        db.prepare(`
+          INSERT OR IGNORE INTO orders(id, customer_id, partner_id, service, pickup, destination, details, status, price_paise, payment_status, created, updated)
+          VALUES(?, ?, ?, 'food', ?, ?, ?, 'in_transit', 42000, 'paid', ?, ?)
+        `).run(
+          od1, u.id, partnerRaviId,
+          "McDonald's, Anna Nagar, Chennai",
+          "4th Avenue, Anna Nagar, Chennai",
+          JSON.stringify({
+            restaurantName: "McDonald's",
+            items: [{ name: '2 Chicken Burgers' }, { name: '1 Fries' }, { name: '1 Coke' }],
+            partnerName: 'Ravi Kumar',
+            partnerPhone: '+91 98765 43210',
+            vehicle: 'TVS Apache • TN 09 AB 1234',
+            rating: 4.8,
+            trips: '2.1K trips',
+            etaMinutes: 8,
+          }),
+          '2024-03-12T13:00:00.000Z', '2024-03-12T13:32:00.000Z'
+        );
+        db.prepare('INSERT OR IGNORE INTO events(order_id, actor_id, status, created) VALUES(?,?,?,?)').run(od1, partnerRaviId, 'accepted', '2024-03-12T13:05:00.000Z');
+        db.prepare('INSERT OR IGNORE INTO events(order_id, actor_id, status, created) VALUES(?,?,?,?)').run(od1, partnerRaviId, 'picked_up', '2024-03-12T13:20:00.000Z');
+        db.prepare('INSERT OR IGNORE INTO events(order_id, actor_id, status, created) VALUES(?,?,?,?)').run(od1, partnerRaviId, 'in_transit', '2024-03-12T13:32:00.000Z');
+        db.prepare('INSERT OR REPLACE INTO locations(order_id, lat, lng, accuracy, updated) VALUES(?,?,?,?,?)')
+          .run(od1, 13.0850, 80.2150, 5, now());
+
+        db.prepare(`
+          INSERT OR IGNORE INTO orders(id, customer_id, partner_id, service, pickup, destination, details, status, price_paise, payment_status, created, updated)
+          VALUES(?, ?, ?, 'food', ?, ?, ?, 'completed', 23000, 'paid', ?, ?)
+        `).run(
+          od2, u.id, partnerRaviId,
+          "Fresh Mart, Anna Nagar, Chennai",
+          "4th Avenue, Anna Nagar, Chennai",
+          JSON.stringify({
+            restaurantName: 'Fresh Mart',
+            items: [{ name: 'Fresh Essentials & Fruits' }],
+          }),
+          '2024-03-10T18:20:00.000Z', '2024-03-10T18:45:00.000Z'
+        );
+        userOrders = db.prepare('SELECT * FROM orders WHERE customer_id=? ORDER BY created DESC LIMIT 10').all(u.id).map(orderView);
+      }
+      let w = db.prepare('SELECT * FROM wallets WHERE user_id=?').get(u.id);
+      if (!w) {
+        db.prepare('INSERT OR REPLACE INTO wallets VALUES(?,?,?)').run(u.id, 125000, now());
+        w = { balance_paise: 125000 };
+      }
+      return json(200, {
+        user: publicUser(u),
+        wallet: { balancePaise: w.balance_paise, balanceFormatted: '₹' + (w.balance_paise / 100).toFixed(2) },
+        recentOrders: userOrders,
+        restaurants: RESTAURANTS,
+        dishes: POPULAR_DISHES,
+        rideOptions: RIDE_OPTIONS,
+      });
     }
 
     // ── Unknown API routes ────────────────────────────────────────────────────

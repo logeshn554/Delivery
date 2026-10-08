@@ -1,67 +1,805 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f7f8f4">
-    <meta name="description" content="GoServe brings rides, food, and deliveries together in one simple app.">
-    <title>GoServe — Everything in motion</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" href="icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div class="announcement"><span class="pulse"></span> One city. One tap. We’ll take it from here. <a href="#services">See how it works <span aria-hidden="true">↗</span></a></div>
-    <header class="topbar">
-      <a class="brand" href="#home" aria-label="GoServe home"><span class="brand-mark">g<span>↗</span></span><span>goserve<span class="brand-dot">.</span></span></a>
-      <nav class="desktop-nav" aria-label="Main navigation"><a href="#services">Explore</a><a href="#how">How it works</a><a href="#track">Track a delivery</a></nav>
-      <div class="header-actions"><button class="location-button" id="locationButton"><span class="pin">⌖</span><span id="locationLabel">Set your location</span><span class="chevron">⌄</span></button><button class="login-button" id="loginButton">Sign in <span aria-hidden="true">↗</span></button></div>
-    </header>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#00A859">
+  <meta name="description" content="GoServe — Food delivery, fast rides, groceries, and courier in one super app.">
+  <title>GoServe — Everything in Motion</title>
+  <link rel="icon" href="icon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
 
-    <main id="home">
-      <section class="hero">
-        <div class="hero-copy">
-          <div class="eyebrow"><span class="eyebrow-line"></span> YOUR CITY, IN MOTION <span class="eyebrow-line"></span></div>
-          <h1>Whatever you need.<br><em>We’re on our way.</em></h1>
-          <p class="hero-text">A ride across town. Lunch at your door. Something important on its way. Meet your city’s new go-to.</p>
-          <div class="hero-cta"><a class="button button-dark" href="#services">Get started <span>↗</span></a><button class="text-button" id="exploreButton"><span class="play">▶</span> See how it works</button></div>
-          <div class="trust-row"><div class="avatar-stack"><span>AR</span><span>MK</span><span>SP</span><span class="avatar-plus">+</span></div><div><strong>A little more time for you.</strong><small>And a whole lot less figuring it out.</small></div></div>
+<!-- Studio Presentation Header -->
+<header class="studio-header">
+  <div class="studio-brand-left">
+    <div class="studio-logo-mark">g↗</div>
+    <div class="studio-brand-title">
+      <strong>GoServe Super App</strong>
+      <small><span class="pulse-dot"></span> Live in Chennai • 4-in-1 Platform</small>
+    </div>
+  </div>
+
+  <div class="studio-view-toggle">
+    <button class="studio-toggle-btn active" id="btnModeShowcase">
+      <span>🖼️</span> 4-Screen Mockup
+    </button>
+    <button class="studio-toggle-btn" id="btnModeSingle">
+      <span>📱</span> Interactive Device
+    </button>
+  </div>
+
+  <div class="studio-links-right">
+    <a href="/partner" class="studio-pill-link" target="_blank">Partner Portal ↗</a>
+    <a href="/operations" class="studio-pill-link" target="_blank">Operations ↗</a>
+  </div>
+</header>
+
+<div class="app-layout" id="mainAppLayout">
+
+  <!-- ========================================================================= -->
+  <!-- 1. FOUR-SCREEN SIDE-BY-SIDE SHOWCASE VIEW (MATCHES REFERENCE MOCKUP)      -->
+  <!-- ========================================================================= -->
+  <section class="showcase-stage" id="showcaseStage">
+
+    <!-- Screen 1: Home Dashboard -->
+    <div class="showcase-column">
+      <div class="device-phone">
+        <div class="phone-notch"><span class="notch-sensor"></span></div>
+        <div class="phone-status-bar">
+          <span class="status-time">9:41</span>
+          <div class="status-icons"><span>📶</span><span>ᯤ</span><span>🔋</span></div>
         </div>
-        <div class="hero-visual" aria-label="Illustration of GoServe delivery moving through a city">
-          <div class="sun-shape"></div><div class="city-lines"><i></i><i></i><i></i><i></i><i></i></div>
-          <div class="route route-one"></div><div class="route route-two"></div>
-          <div class="map-label label-home"><span>⌂</span> HOME</div><div class="map-label label-drop"><span>✦</span> YOUR PLACE</div>
-          <div class="scooter-wrap"><div class="scooter-shadow"></div><div class="scooter"><span class="scooter-box">g<span>↗</span></span><span class="scooter-body"></span><span class="wheel wheel-a"></span><span class="wheel wheel-b"></span><span class="scooter-rider">●</span></div></div>
-          <div class="float-card card-arrival"><span class="arrival-icon">↗</span><span><strong>On the way</strong><small>Right around the corner</small></span><span class="live-dot"></span></div>
-          <div class="float-card card-rating"><span class="star">✦</span><strong>5</strong><small>Ways to move</small></div>
-          <div class="hero-caption">GOOD THINGS ARE<br>ALREADY MOVING <span>✳</span></div>
+
+        <main class="app-viewport">
+          <header class="home-topbar">
+            <div class="user-greeting">
+              <div class="user-avatar">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Logesh avatar">
+              </div>
+              <div class="greeting-text">
+                <h2>Hi Logesh <span class="wave-hand">👋</span></h2>
+                <p>What would you like to do today?</p>
+              </div>
+            </div>
+            <button class="bell-btn" aria-label="Notifications">
+              <span class="bell-icon">🔔</span>
+              <span class="bell-badge">2</span>
+            </button>
+          </header>
+
+          <div class="search-box-wrap">
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="home-search-input" placeholder="Search for food, restaurants, stores...">
+              <button class="filter-btn"><span>⚙️</span></button>
+            </div>
+          </div>
+
+          <div class="screen-scroll-body">
+            <div class="services-grid" role="group">
+              <button class="service-pill-btn" data-target="screen-food">
+                <div class="service-icon-bg bg-orange">🍔</div>
+                <span>Food</span>
+              </button>
+              <button class="service-pill-btn" data-target="screen-parcel">
+                <div class="service-icon-bg bg-red">🛵</div>
+                <span>Order Delivery</span>
+              </button>
+              <button class="service-pill-btn" data-target="screen-rides">
+                <div class="service-icon-bg bg-blue">🚗</div>
+                <span>Pick Me</span>
+              </button>
+              <button class="service-pill-btn" data-target="screen-groceries">
+                <div class="service-icon-bg bg-amber">🧺</div>
+                <span>Groceries</span>
+              </button>
+              <button class="service-pill-btn" data-target="screen-parcel">
+                <div class="service-icon-bg bg-brown">📦</div>
+                <span>Parcel</span>
+              </button>
+            </div>
+
+            <!-- Hero Promo Banner -->
+            <div class="hero-promo-card">
+              <div class="promo-content">
+                <div class="promo-badge-tag">UP TO 50% OFF</div>
+                <h3>Delicious Food, Delivered Happier Days!</h3>
+                <p>Get up to 50% OFF on your favourite meals</p>
+                <button class="btn-promo-action" onclick="switchToScreen('screen-food')">Order Now <span>→</span></button>
+              </div>
+              <div class="promo-visual">
+                <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&auto=format&fit=crop&q=80" alt="Burger with fries" class="promo-burger-img">
+              </div>
+            </div>
+
+            <!-- Split Action Cards -->
+            <div class="split-cards-row">
+              <div class="split-card card-groceries" onclick="switchToScreen('screen-food')">
+                <div class="split-card-text">
+                  <h4>Groceries in Minutes</h4>
+                  <p>Fresh essentials delivered fast</p>
+                </div>
+                <div class="split-card-art"><span class="split-card-emoji">🥦🥕🍎</span></div>
+              </div>
+              <div class="split-card card-parcel" onclick="switchToScreen('screen-parcel')">
+                <div class="split-card-text">
+                  <h4>Send Anything Anywhere</h4>
+                  <p>Safe. Fast. Reliable.</p>
+                </div>
+                <div class="split-card-art"><span class="split-card-emoji">📦🚚✨</span></div>
+              </div>
+            </div>
+
+            <!-- Recent Orders -->
+            <div class="section-title-row">
+              <h3>Recent Orders</h3>
+              <button class="see-all-btn" onclick="switchToScreen('screen-track')">See All</button>
+            </div>
+
+            <div class="recent-orders-list">
+              <article class="recent-order-item" onclick="switchToScreen('screen-track')">
+                <div class="order-store-icon bg-red"><span class="mcd-m">M</span></div>
+                <div class="order-info">
+                  <h4>McDonald's</h4>
+                  <p class="order-date">12 Mar 2024, 1:24 PM</p>
+                  <span class="badge-status-delivered">● Delivered</span>
+                </div>
+                <div class="order-price-col">
+                  <span class="order-cost">₹420</span>
+                  <button class="btn-reorder">Track ↗</button>
+                </div>
+              </article>
+
+              <article class="recent-order-item" onclick="switchToScreen('screen-track')">
+                <div class="order-store-icon bg-green"><span>🧺</span></div>
+                <div class="order-info">
+                  <h4>Fresh Mart</h4>
+                  <p class="order-date">10 Mar 2024, 6:20 PM</p>
+                  <span class="badge-status-delivered">● Delivered</span>
+                </div>
+                <div class="order-price-col">
+                  <span class="order-cost">₹230</span>
+                  <button class="btn-reorder">Details</button>
+                </div>
+              </article>
+            </div>
+          </div>
+        </main>
+
+        <nav class="bottom-nav-bar">
+          <button class="nav-tab active"><span class="tab-icon">🏠</span><span class="tab-label">Home</span></button>
+          <button class="nav-tab" onclick="switchToScreen('screen-track')"><span class="tab-icon">📋</span><span class="tab-label">Orders</span></button>
+          <button class="nav-tab" onclick="switchToScreen('screen-wallet')"><span class="tab-icon">💳</span><span class="tab-label">Wallet</span></button>
+          <button class="nav-tab"><span class="tab-icon">❓</span><span class="tab-label">Help</span></button>
+          <button class="nav-tab"><span class="tab-icon">👤</span><span class="tab-label">Profile</span></button>
+        </nav>
+        <div class="phone-home-indicator"></div>
+      </div>
+
+      <div class="showcase-caption">
+        <h3>1. Home Dashboard</h3>
+        <p>All services in one place</p>
+      </div>
+    </div>
+
+    <!-- Screen 2: Food Ordering -->
+    <div class="showcase-column">
+      <div class="device-phone">
+        <div class="phone-notch"><span class="notch-sensor"></span></div>
+        <div class="phone-status-bar">
+          <span class="status-time">9:41</span>
+          <div class="status-icons"><span>📶</span><span>ᯤ</span><span>🔋</span></div>
         </div>
-      </section>
 
-      <section class="services-section" id="services">
-        <div class="section-heading"><div><div class="eyebrow left-eyebrow">THE CITY, AT YOUR SERVICE</div><h2>What’s the plan <span>today?</span></h2></div><span class="section-note">A few taps. Consider it handled.</span></div>
-        <div class="service-grid">
-          <button class="service-card service-food" data-service="Food"><span class="service-icon icon-food">✳</span><span class="service-index">01 / EAT</span><strong>Food, sorted.</strong><small>Something good is closer than you think.</small><span class="service-arrow">↗</span><span class="food-art"><i></i><b>✿</b></span></button>
-          <button class="service-card service-ride" data-service="Ride"><span class="service-icon icon-ride">↗</span><span class="service-index">02 / GO</span><strong>Let’s get you there.</strong><small>Easy rides for wherever life takes you.</small><span class="service-arrow">↗</span><span class="ride-art"><i></i><b></b></span></button>
-          <button class="service-card service-parcel" data-service="Package"><span class="service-icon icon-parcel">▦</span><span class="service-index">03 / SEND</span><strong>Send a little something.</strong><small>From your hands to theirs, with care.</small><span class="service-arrow">↗</span><span class="parcel-art"><i>g<span>↗</span></i></span></button>
-          <button class="service-card service-more" data-service="More"><span class="service-icon icon-more">✳</span><span class="service-index">04 / MORE</span><strong>Big things can move.</strong><small>Vehicle transport and business deliveries.</small><span class="service-arrow">↗</span><span class="more-art">↗</span></button>
+        <main class="app-viewport">
+          <header class="food-topbar">
+            <button class="nav-back-btn" onclick="switchToScreen('screen-home')">←</button>
+            <div class="food-location-picker">
+              <span class="loc-pin">📍</span>
+              <div class="loc-text">
+                <span class="loc-label">Food</span>
+                <strong class="loc-address">Anna Nagar, Chennai ⌄</strong>
+              </div>
+            </div>
+            <button class="heart-btn">🤍</button>
+          </header>
+
+          <div class="search-box-wrap">
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="food-search-input" placeholder="Search for restaurants or dishes...">
+              <button class="filter-btn"><span>⚙️</span></button>
+            </div>
+          </div>
+
+          <div class="screen-scroll-body">
+            <!-- Cuisine Chips -->
+            <div class="category-chips-row cuisine-filter-chips">
+              <button class="chip-btn active" data-cuisine="all"><span class="chip-icon">🍽️</span> All</button>
+              <button class="chip-btn" data-cuisine="biryani"><span class="chip-icon">🍛</span> Biryani</button>
+              <button class="chip-btn" data-cuisine="pizza"><span class="chip-icon">🍕</span> Pizza</button>
+              <button class="chip-btn" data-cuisine="burgers"><span class="chip-icon">🍔</span> Burgers</button>
+              <button class="chip-btn" data-cuisine="south indian"><span class="chip-icon">🥞</span> South Indian</button>
+              <button class="chip-btn" data-cuisine="chinese"><span class="chip-icon">🍜</span> Chinese</button>
+            </div>
+
+            <!-- Top Restaurants Section -->
+            <div class="section-title-row">
+              <h3>Top Restaurants</h3>
+              <button class="see-all-btn">See All</button>
+            </div>
+            <div class="restaurants-grid">
+              <!-- Rendered dynamically -->
+            </div>
+
+            <!-- Popular Dishes Section -->
+            <div class="section-title-row">
+              <h3>Popular Dishes</h3>
+              <button class="see-all-btn">See All</button>
+            </div>
+            <div class="popular-dishes-row">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </main>
+
+        <!-- Floating Cart Bar -->
+        <div class="floating-cart-bar" onclick="openCartDrawer()">
+          <div class="cart-left">
+            <span class="cart-items-count-badge cart-badge-count">2</span>
+            <span class="cart-view-text">View Cart</span>
+          </div>
+          <div class="cart-right">
+            <strong class="cart-floating-total">₹640</strong>
+            <span class="cart-arrow">›</span>
+          </div>
         </div>
-      </section>
 
-      <section class="tracking-section" id="track">
-        <div class="tracking-copy"><div class="eyebrow left-eyebrow">A LITTLE PEACE OF MIND</div><h2>Already sent<br><em>something?</em></h2><p>That little package is on its way. Get the latest update here.</p><form class="tracking-form" id="trackingForm"><label class="sr-only" for="trackingId">Tracking number</label><span>⌕</span><input id="trackingId" name="trackingId" placeholder="Your tracking number" autocomplete="off"><button type="submit" aria-label="Track package">↗</button></form><div class="tracking-result" id="trackingResult" aria-live="polite"></div><small class="demo-note">Demo preview · Live order tracking will be available when service launches.</small></div>
-        <div class="tracking-map"><div class="map-grid"><div class="map-road road-a"></div><div class="map-road road-b"></div><div class="map-road road-c"></div><div class="map-block block-a"></div><div class="map-block block-b"></div><div class="map-block block-c"></div><div class="map-block block-d"></div><div class="map-block block-e"></div><div class="map-river"></div><div class="map-route"></div><span class="map-marker marker-start">⌂</span><span class="map-marker marker-end">✦</span><span class="map-rider">⌁</span><span class="map-distance">ON THE MOVE <b>·</b> 2.4 KM</span></div><div class="map-info"><span class="map-live"><i></i> PREVIEW</span><strong>Your delivery, at a glance.</strong><small>Example route · Bengaluru</small></div></div>
-      </section>
+        <nav class="bottom-nav-bar">
+          <button class="nav-tab" onclick="switchToScreen('screen-home')"><span class="tab-icon">🏠</span><span class="tab-label">Home</span></button>
+          <button class="nav-tab active"><span class="tab-icon">🍔</span><span class="tab-label">Food</span></button>
+          <button class="nav-tab" onclick="switchToScreen('screen-track')"><span class="tab-icon">📋</span><span class="tab-label">Orders</span></button>
+          <button class="nav-tab" onclick="switchToScreen('screen-wallet')"><span class="tab-icon">💳</span><span class="tab-label">Wallet</span></button>
+          <button class="nav-tab"><span class="tab-icon">👤</span><span class="tab-label">Profile</span></button>
+        </nav>
+        <div class="phone-home-indicator"></div>
+      </div>
 
-      <section class="how-section" id="how"><div class="how-heading"><div class="eyebrow">EASY AS IT SHOULD BE</div><h2>More living.<br><em>Less logistics.</em></h2></div><div class="steps"><article><span>01</span><b>Tell us what you need</b><p>Pick a service and add the little details.</p></article><article><span>02</span><b>We’ll make it happen</b><p>Your local GoServe partner takes it from here.</p></article><article><span>03</span><b>Stay in the loop</b><p>See what’s happening, right when it does.</p></article></div></section>
-      <section class="partner-banner"><div><div class="eyebrow">GOOD PEOPLE, GOING PLACES</div><h2>Make your day<br><em>go a little further.</em></h2><p>Bring a little more motion to your workday. Partner interest opens with our first service area.</p></div><a href="/partner" class="button button-light">I’m interested <span>↗</span></a><div class="banner-orbit orbit-one"></div><div class="banner-orbit orbit-two"></div></section>
-    </main>
-    <footer><a class="brand footer-brand" href="#home"><span class="brand-mark">g<span>↗</span></span><span>goserve<span class="brand-dot">.</span></span></a><span>One city, a little more in motion.</span><div><a href="#services">Explore</a><a href="#track">Track</a><a href="/app">Say hello</a></div><small>© <span id="year"></span> GoServe · A concept preview</small></footer>
-    <dialog id="serviceDialog" class="service-dialog"><button class="dialog-close" id="dialogClose" aria-label="Close">×</button><div class="dialog-mark">g↗</div><div class="eyebrow">A GOOD PLACE TO START</div><h2 id="dialogTitle">Coming to your city.</h2><p id="dialogText">We’re getting the GoServe experience ready. Leave us your interest and we’ll share an update when bookings open.</p><form id="interestForm"><label for="interestEmail">Your email</label><div class="email-row"><input type="email" id="interestEmail" placeholder="you@example.com" required><button class="button button-dark" type="submit">Keep me posted ↗</button></div></form><p class="dialog-confirm" id="dialogConfirm" aria-live="polite"></p></dialog>
-    <script src="app.js" defer></script>
-  </body>
+      <div class="showcase-caption">
+        <h3>2. Food Ordering</h3>
+        <p>Restaurants, dishes, ratings & cart</p>
+      </div>
+    </div>
+
+    <!-- Screen 3: Order Tracking -->
+    <div class="showcase-column">
+      <div class="device-phone">
+        <div class="phone-notch"><span class="notch-sensor"></span></div>
+        <div class="phone-status-bar">
+          <span class="status-time">9:41</span>
+          <div class="status-icons"><span>📶</span><span>ᯤ</span><span>🔋</span></div>
+        </div>
+
+        <main class="app-viewport">
+          <header class="track-topbar">
+            <button class="nav-back-btn" onclick="switchToScreen('screen-home')">←</button>
+            <div class="track-title-info">
+              <h2>Track Order</h2>
+              <p class="track-order-sub">McDonald's • Order #OD123456</p>
+            </div>
+            <button class="btn-help-outline" onclick="openSupportModal()">❓ Help</button>
+          </header>
+
+          <div class="screen-scroll-body no-pad-top">
+            <!-- Vector Map -->
+            <div class="live-map-container">
+              <svg class="map-svg-canvas" viewBox="0 0 400 260" preserveAspectRatio="none">
+                <rect width="400" height="260" fill="#EAF3E8"/>
+                <path d="M 0 40 L 400 40" stroke="#FFFFFF" stroke-width="8"/>
+                <path d="M 0 110 L 400 110" stroke="#FFFFFF" stroke-width="12"/>
+                <path d="M 0 190 L 400 190" stroke="#FFFFFF" stroke-width="8"/>
+                <path d="M 70 0 L 70 260" stroke="#FFFFFF" stroke-width="10"/>
+                <path d="M 180 0 L 180 260" stroke="#FFFFFF" stroke-width="14"/>
+                <path d="M 310 0 L 310 260" stroke="#FFFFFF" stroke-width="10"/>
+                <path d="M 180 110 Q 240 130 310 80" stroke="#FFFFFF" stroke-width="10"/>
+                <path d="M 70 190 Q 140 140 180 110" stroke="#FFFFFF" stroke-width="10"/>
+
+                <text x="30" y="30" class="map-label">Koyambedu</text>
+                <text x="210" y="85" class="map-label">Shenoy Nagar</text>
+                <text x="280" y="30" class="map-label">Anna Nagar</text>
+
+                <!-- Route Polyline -->
+                <path d="M 280 50 Q 270 110 230 110 T 130 170" fill="none" stroke="#00A859" stroke-width="5" stroke-linecap="round" stroke-dasharray="6,4" class="anim-route"/>
+
+                <!-- Restaurant Pin (McDonald's) -->
+                <g transform="translate(270, 30)">
+                  <circle cx="15" cy="15" r="16" fill="#DC2626" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))"/>
+                  <text x="9" y="21" font-size="16" font-weight="900" fill="#FFCC00">M</text>
+                </g>
+
+                <!-- Customer Drop Pin -->
+                <g transform="translate(115, 155)">
+                  <circle cx="15" cy="15" r="8" fill="#1E293B"/>
+                  <circle cx="15" cy="15" r="14" fill="none" stroke="#1E293B" stroke-width="2" class="pulse-ring"/>
+                </g>
+              </svg>
+
+              <!-- Animated Scooter Marker -->
+              <div class="driver-map-marker">
+                <div class="eta-bubble-pill">Arriving in <strong class="eta-minutes-count">8 min</strong></div>
+                <div class="marker-scooter-icon">🛵</div>
+              </div>
+
+              <button class="map-recenter-btn" aria-label="Recenter map">⌖</button>
+            </div>
+
+            <!-- Stepper Progress Card -->
+            <div class="tracking-stepper-card">
+              <div class="stepper-track">
+                <div class="step-point done">
+                  <div class="step-dot">✓</div>
+                  <div class="step-info"><strong>Accepted</strong><small>1:05 PM</small></div>
+                </div>
+                <div class="step-connector done"></div>
+                <div class="step-point done">
+                  <div class="step-dot">✓</div>
+                  <div class="step-info"><strong>Picked Up</strong><small>1:20 PM</small></div>
+                </div>
+                <div class="step-connector active"></div>
+                <div class="step-point active">
+                  <div class="step-dot pulse">🛵</div>
+                  <div class="step-info"><strong class="text-green">On the Way</strong><small>1:32 PM</small></div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step-point">
+                  <div class="step-dot">○</div>
+                  <div class="step-info"><strong>Delivered</strong><small>ETA 1:40 PM</small></div>
+                </div>
+              </div>
+
+              <div class="live-status-callout">
+                <span class="callout-icon">🛵</span>
+                <div class="callout-text">
+                  <strong>Your order is on the way!</strong>
+                  <p>Ravi is coming to deliver your order</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Driver Card -->
+            <div class="driver-profile-card">
+              <div class="driver-meta-row">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80" alt="Ravi Kumar driver avatar" class="driver-img">
+                <div class="driver-details">
+                  <h4>Ravi Kumar</h4>
+                  <div class="driver-rating-row">
+                    <span class="rating-star">★ 4.8</span>
+                    <span class="trip-count">(2.1K trips)</span>
+                  </div>
+                  <p class="driver-vehicle">TVS Apache • TN 09 AB 1234</p>
+                </div>
+                <div class="vehicle-icon-pill">🏍️</div>
+              </div>
+
+              <div class="driver-actions-row">
+                <button class="btn-driver-action call-btn" onclick="openCallModal()">
+                  <span>📞</span> Call
+                </button>
+                <button class="btn-driver-action chat-btn" onclick="openChatDrawer()">
+                  <span>💬</span> Chat
+                </button>
+                <button class="btn-driver-action share-btn" onclick="shareTrackingLink()">
+                  <span>🔗</span> Share
+                </button>
+              </div>
+            </div>
+
+            <!-- Delivery Details Accordion -->
+            <div class="delivery-details-card">
+              <div class="details-header">
+                <h3>Delivery Details</h3>
+                <span class="chevron-toggle">⌄</span>
+              </div>
+              <div class="details-body">
+                <div class="restaurant-summary-row">
+                  <div class="rest-badge bg-red"><span class="mcd-m">M</span></div>
+                  <div class="rest-summary-text">
+                    <strong>McDonald's</strong>
+                    <p>2 Chicken Burgers, 1 Fries, 1 Coke</p>
+                  </div>
+                  <span class="summary-cost">₹420 ›</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+
+      <div class="showcase-caption">
+        <h3>3. Order Tracking</h3>
+        <p>Live location, driver details & progress</p>
+      </div>
+    </div>
+
+    <!-- Screen 4: Pick Me – Ride Booking -->
+    <div class="showcase-column">
+      <div class="device-phone">
+        <div class="phone-notch"><span class="notch-sensor"></span></div>
+        <div class="phone-status-bar">
+          <span class="status-time">9:41</span>
+          <div class="status-icons"><span>📶</span><span>ᯤ</span><span>🔋</span></div>
+        </div>
+
+        <main class="app-viewport">
+          <header class="rides-topbar">
+            <button class="nav-back-btn" onclick="switchToScreen('screen-home')">←</button>
+            <div class="rides-title-info">
+              <h2>Pick Me</h2>
+              <p>Rides for your everyday travel</p>
+            </div>
+            <span class="car-badge-icon">🚗</span>
+          </header>
+
+          <div class="screen-scroll-body no-pad-top">
+            <!-- Route Input Card -->
+            <div class="route-input-card">
+              <div class="route-input-group">
+                <div class="route-pin pin-pickup">🟢</div>
+                <div class="route-field">
+                  <label>Pickup location</label>
+                  <input type="text" class="ride-pickup-input" value="Anna Nagar, Chennai">
+                </div>
+                <button class="btn-gps-current" aria-label="Current location">🎯</button>
+              </div>
+
+              <div class="route-swap-row">
+                <div class="route-dashed-line"></div>
+                <button class="btn-swap-locations" onclick="swapLocations()">⇅</button>
+              </div>
+
+              <div class="route-input-group">
+                <div class="route-pin pin-drop">🔴</div>
+                <div class="route-field">
+                  <label>Drop location</label>
+                  <input type="text" class="ride-dest-input" value="Chennai International Airport (MAA)">
+                </div>
+                <button class="btn-add-stop">+</button>
+              </div>
+            </div>
+
+            <!-- Route Map Preview -->
+            <div class="ride-map-preview">
+              <svg class="map-svg-canvas" viewBox="0 0 400 200" preserveAspectRatio="none">
+                <rect width="400" height="200" fill="#EBF2FA"/>
+                <path d="M 0 50 L 400 50" stroke="#FFFFFF" stroke-width="8"/>
+                <path d="M 0 100 L 400 100" stroke="#FFFFFF" stroke-width="12"/>
+                <path d="M 0 160 L 400 160" stroke="#FFFFFF" stroke-width="8"/>
+                <path d="M 90 0 L 90 200" stroke="#FFFFFF" stroke-width="10"/>
+                <path d="M 200 0 L 200 200" stroke="#FFFFFF" stroke-width="14"/>
+                <path d="M 320 0 L 320 200" stroke="#FFFFFF" stroke-width="10"/>
+
+                <text x="30" y="40" class="map-label">Anna Nagar</text>
+                <text x="130" y="30" class="map-label">Kilpauk</text>
+                <text x="130" y="90" class="map-label">Nungambakkam</text>
+                <text x="170" y="150" class="map-label">T. Nagar</text>
+                <text x="270" y="150" class="map-label">Guindy</text>
+                <text x="310" y="180" class="map-label font-bold">Chennai Airport (MAA)</text>
+
+                <path d="M 50 60 Q 90 90 140 100 T 260 140 T 360 160" fill="none" stroke="#00A859" stroke-width="5" stroke-linecap="round" class="anim-route"/>
+                <circle cx="50" cy="60" r="7" fill="#00A859"/>
+                <circle cx="360" cy="160" r="7" fill="#DC2626"/>
+              </svg>
+
+              <div class="ride-vehicle-marker">
+                <div class="eta-bubble-pill"><strong>2 min</strong></div>
+                <div class="marker-car-icon">🚗</div>
+              </div>
+            </div>
+
+            <!-- Ride Options Selection -->
+            <div class="ride-options-list">
+              <label class="ride-option-card active" data-ride="auto">
+                <input type="radio" name="rideType" value="auto" checked>
+                <div class="ride-vehicle-emoji">🛺</div>
+                <div class="ride-info-col">
+                  <div class="ride-name-row">
+                    <strong>Auto</strong>
+                    <span class="ride-eta-tag">2 min</span>
+                  </div>
+                  <p class="ride-sub">Affordable for short rides</p>
+                </div>
+                <div class="ride-price-col">
+                  <span class="ride-fare">₹120–150</span>
+                  <span class="radio-check">✓</span>
+                </div>
+              </label>
+
+              <label class="ride-option-card" data-ride="bike">
+                <input type="radio" name="rideType" value="bike">
+                <div class="ride-vehicle-emoji">🏍️</div>
+                <div class="ride-info-col">
+                  <div class="ride-name-row">
+                    <strong>Bike</strong>
+                    <span class="ride-eta-tag">3 min</span>
+                  </div>
+                  <p class="ride-sub">Beat the traffic</p>
+                </div>
+                <div class="ride-price-col">
+                  <span class="ride-fare">₹90–120</span>
+                  <span class="radio-check">○</span>
+                </div>
+              </label>
+
+              <label class="ride-option-card" data-ride="hatchback">
+                <input type="radio" name="rideType" value="hatchback">
+                <div class="ride-vehicle-emoji">🚗</div>
+                <div class="ride-info-col">
+                  <div class="ride-name-row">
+                    <strong>Car (Hatchback)</strong>
+                    <span class="ride-eta-tag">4 min</span>
+                  </div>
+                  <p class="ride-sub">Comfortable rides</p>
+                </div>
+                <div class="ride-price-col">
+                  <span class="ride-fare">₹250–320</span>
+                  <span class="radio-check">○</span>
+                </div>
+              </label>
+
+              <label class="ride-option-card" data-ride="suv">
+                <input type="radio" name="rideType" value="suv">
+                <div class="ride-vehicle-emoji">🚙</div>
+                <div class="ride-info-col">
+                  <div class="ride-name-row">
+                    <strong>Car (SUV)</strong>
+                    <span class="ride-eta-tag">5 min</span>
+                  </div>
+                  <p class="ride-sub">Extra space & comfort</p>
+                </div>
+                <div class="ride-price-col">
+                  <span class="ride-fare">₹350–450</span>
+                  <span class="radio-check">○</span>
+                </div>
+              </label>
+            </div>
+
+            <div class="book-ride-footer">
+              <button class="btn-book-ride-green" onclick="handleBookRide()">
+                <span class="btn-spinner" hidden></span>
+                <span>Book Ride</span>
+              </button>
+              <p class="ride-eta-summary">Estimated time to reach: <strong>25–30 mins</strong></p>
+            </div>
+          </div>
+        </main>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+
+      <div class="showcase-caption">
+        <h3>4. Pick Me – Ride Booking</h3>
+        <p>Multiple ride options, live tracking & ETA.</p>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 2. SINGLE INTERACTIVE DEVICE STAGE (FOCUSED SIMULATOR)                   -->
+  <!-- ========================================================================= -->
+  <section class="single-stage" id="singleStage" hidden>
+    
+    <!-- Lateral Sidebar Navigator -->
+    <aside class="desktop-sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-logo">g↗</span>
+        <span class="brand-text">goserve<span class="brand-dot">.</span></span>
+      </div>
+      <p class="sidebar-tagline">One app for food, rides, groceries & deliveries in Chennai.</p>
+
+      <div class="screen-selector-card">
+        <div class="selector-title">VIEW SCREEN</div>
+        <button class="screen-nav-btn active" data-screen="screen-home">
+          <span class="s-icon">📱</span>
+          <div class="s-text"><strong>1. Home Dashboard</strong><small>All services in one place</small></div>
+        </button>
+        <button class="screen-nav-btn" data-screen="screen-food">
+          <span class="s-icon">🍔</span>
+          <div class="s-text"><strong>2. Food Ordering</strong><small>Restaurants, dishes & cart</small></div>
+        </button>
+        <button class="screen-nav-btn" data-screen="screen-track">
+          <span class="s-icon">📍</span>
+          <div class="s-text"><strong>3. Order Tracking</strong><small>Live GPS, driver & progress</small></div>
+        </button>
+        <button class="screen-nav-btn" data-screen="screen-rides">
+          <span class="s-icon">🚗</span>
+          <div class="s-text"><strong>4. Pick Me Rides</strong><small>Multiple rides & live ETA</small></div>
+        </button>
+        <button class="screen-nav-btn" data-screen="screen-wallet">
+          <span class="s-icon">💳</span>
+          <div class="s-text"><strong>5. Wallet & Pay</strong><small>Balance, cards & history</small></div>
+        </button>
+      </div>
+
+      <div class="sidebar-stats">
+        <div class="stat-pill"><span class="pulse-dot"></span> Live in Chennai</div>
+        <div class="stat-pill">⚡ 8 Min Avg Delivery</div>
+        <div class="stat-pill">⭐ 4.8 Partner Rating</div>
+      </div>
+    </aside>
+
+    <!-- Single Mobile Device Phone Frame -->
+    <div class="device-phone">
+      <div class="phone-notch"><span class="notch-sensor"></span></div>
+      <div class="phone-status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons"><span>📶</span><span>ᯤ</span><span>🔋</span></div>
+      </div>
+
+      <main class="app-viewport" id="singleAppViewport">
+        <!-- Rendered reactively from activeScreen -->
+      </main>
+
+      <nav class="bottom-nav-bar" id="singleBottomNav">
+        <button class="nav-tab active" data-tab="screen-home"><span class="tab-icon">🏠</span><span class="tab-label">Home</span></button>
+        <button class="nav-tab" data-tab="screen-track"><span class="tab-icon">📋</span><span class="tab-label">Orders</span></button>
+        <button class="nav-tab" data-tab="screen-wallet"><span class="tab-icon">💳</span><span class="tab-label">Wallet</span></button>
+        <button class="nav-tab" data-tab="screen-help"><span class="tab-icon">❓</span><span class="tab-label">Help</span></button>
+        <button class="nav-tab" data-tab="screen-profile"><span class="tab-icon">👤</span><span class="tab-label">Profile</span></button>
+      </nav>
+      <div class="phone-home-indicator"></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ========================================================================= -->
+<!-- SLIDE-OVER DRAWERS & MODALS                                               -->
+<!-- ========================================================================= -->
+
+<!-- 1. Cart & Checkout Drawer -->
+<div class="modal-backdrop" id="cartDrawerBackdrop" hidden>
+  <div class="bottom-sheet" id="cartDrawerSheet">
+    <div class="sheet-drag-handle"></div>
+    <div class="sheet-header">
+      <h3>Your Cart</h3>
+      <button class="btn-sheet-close" id="btnCloseCart">×</button>
+    </div>
+
+    <div class="sheet-body">
+      <div class="cart-items-list" id="cartItemsList"></div>
+
+      <div class="delivery-address-box">
+        <span class="pin">📍</span>
+        <div class="addr-text">
+          <strong>Delivering to:</strong>
+          <p>Flat 302, 4th Avenue, Anna Nagar, Chennai</p>
+        </div>
+      </div>
+
+      <div class="bill-breakdown-card">
+        <h4>Bill Summary</h4>
+        <div class="bill-row">
+          <span>Item Total</span>
+          <span id="billItemTotal">₹640.00</span>
+        </div>
+        <div class="bill-row">
+          <span>Delivery Fee (FREE over ₹500)</span>
+          <span class="text-green">FREE</span>
+        </div>
+        <div class="bill-row">
+          <span>Platform Fee</span>
+          <span>₹5.00</span>
+        </div>
+        <div class="bill-row">
+          <span>GST & Charges</span>
+          <span id="billGst">₹32.00</span>
+        </div>
+        <div class="bill-divider"></div>
+        <div class="bill-row total">
+          <strong>To Pay</strong>
+          <strong class="text-green" id="billGrandTotal">₹677.00</strong>
+        </div>
+      </div>
+
+      <div class="payment-method-selector">
+        <h4>Payment Method</h4>
+        <label class="pay-option active">
+          <input type="radio" name="checkoutPay" value="wallet" checked>
+          <span>💳 GoServe Wallet (₹1,250.00 available)</span>
+        </label>
+        <label class="pay-option">
+          <input type="radio" name="checkoutPay" value="upi">
+          <span>📱 Google Pay / PhonePe / UPI</span>
+        </label>
+        <label class="pay-option">
+          <input type="radio" name="checkoutPay" value="cod">
+          <span>💵 Cash on Delivery</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="sheet-footer">
+      <button class="btn-checkout-green" id="btnPlaceOrderAction">
+        Place Order • <span id="checkoutBtnTotal">₹677.00</span> ↗
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Live Driver Chat Drawer -->
+<div class="modal-backdrop" id="chatDrawerBackdrop" hidden>
+  <div class="bottom-sheet chat-sheet" id="chatDrawerSheet">
+    <div class="sheet-drag-handle"></div>
+    <div class="sheet-header">
+      <div class="chat-driver-status">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80" alt="Ravi driver avatar" class="chat-driver-avatar">
+        <div>
+          <h4>Ravi Kumar</h4>
+          <span class="online-tag">● On the way to deliver</span>
+        </div>
+      </div>
+      <button class="btn-sheet-close" id="btnCloseChat">×</button>
+    </div>
+
+    <div class="chat-messages-container" id="chatMessagesContainer">
+      <div class="chat-bubble driver">
+        <p>Hi Logesh! I've picked up your order from McDonald's and I am heading your way.</p>
+        <span class="chat-time">1:21 PM</span>
+      </div>
+      <div class="chat-bubble customer">
+        <p>Thanks Ravi! Please ring the doorbell upon arrival.</p>
+        <span class="chat-time">1:24 PM</span>
+      </div>
+    </div>
+
+    <div class="chat-quick-replies">
+      <button class="chip-reply" data-reply="Where are you now?">Where are you?</button>
+      <button class="chip-reply" data-reply="Please call me once you reach.">Call upon arrival</button>
+      <button class="chip-reply" data-reply="Leave order at the door please.">Leave at door</button>
+    </div>
+
+    <form class="chat-input-bar" id="chatInputForm">
+      <input type="text" id="chatTextInput" placeholder="Type a message to Ravi..." autocomplete="off">
+      <button type="submit" class="btn-chat-send" id="btnSendChat">Send</button>
+    </form>
+  </div>
+</div>
+
+<!-- 3. Phone Call Dialer Simulation Modal -->
+<div class="modal-backdrop" id="callModalBackdrop" hidden>
+  <div class="call-modal-card">
+    <div class="call-avatar-pulse">
+      <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80" alt="Ravi Kumar driver avatar">
+    </div>
+    <h3>Ravi Kumar</h3>
+    <p class="call-status-label" id="callTimerLabel">Connecting…</p>
+    <p class="call-phone-num">+91 98765 43210 • Delivery Partner</p>
+
+    <div class="call-controls-row">
+      <button class="call-control-circle">🔇<small>Mute</small></button>
+      <button class="call-control-circle active">🔊<small>Speaker</small></button>
+      <button class="call-control-circle">⌨️<small>Keypad</small></button>
+    </div>
+
+    <button class="btn-end-call-red" id="btnEndCall">End Call</button>
+  </div>
+</div>
+
+<!-- Toast Banner -->
+<div class="toast-banner" id="globalToast" hidden>
+  <span id="toastIcon">✨</span>
+  <span id="toastMessage">Order confirmed!</span>
+</div>
+
+<script src="app.js" type="module"></script>
+</body>
 </html>
-
