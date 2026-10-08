@@ -35,6 +35,7 @@
   </div>
 
   <div class="studio-links-right">
+    <button class="studio-pill-link" id="btnPhoneConnectModal" style="background:var(--clr-brand);color:#fff;border-color:var(--clr-brand);cursor:pointer;">📱 Open on Phone</button>
     <a href="/partner" class="studio-pill-link" target="_blank">Partner Portal ↗</a>
     <a href="/operations" class="studio-pill-link" target="_blank">Operations ↗</a>
   </div>
@@ -791,6 +792,32 @@
     </div>
 
     <button class="btn-end-call-red" id="btnEndCall">End Call</button>
+  </div>
+</div>
+
+<!-- 4. Phone Connect Modal -->
+<div class="modal-backdrop" id="phoneModalBackdrop" hidden>
+  <div class="bottom-sheet" style="max-width: 440px; margin: auto; border-radius: 24px; padding: 24px;">
+    <div class="sheet-header" style="border:none; padding-bottom: 8px;">
+      <h3 style="font-size: 18px; font-weight: 800;">📱 Open on Your Phone</h3>
+      <button class="btn-sheet-close" id="btnClosePhoneModal">×</button>
+    </div>
+    <div style="text-align: center; padding: 12px 0 16px;">
+      <p style="font-size: 13px; color: #64748B; margin-bottom: 16px;">
+        Make sure your phone is connected to the same <strong>Wi-Fi</strong> network, then open this URL in your mobile browser:
+      </p>
+      
+      <div style="display:flex; align-items:center; background:#F1F5F9; border-radius: 12px; padding: 10px 14px; border:1px solid #E2E8F0; margin-bottom: 16px; justify-content: space-between;">
+        <code style="font-size: 15px; font-weight: 700; color: #00A859;" id="phoneUrlText">http://10.150.249.170:8000</code>
+        <button id="btnCopyPhoneUrl" style="background:#00A859; color:#fff; border:none; padding:6px 14px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;">Copy</button>
+      </div>
+
+      <div style="text-align: left; background:#F8FAFC; border-radius:12px; padding:14px; font-size:12px; color:#475569; line-height: 1.6; border:1px solid #E2E8F0;">
+        <strong style="color:#0F172A; display:block; margin-bottom:4px;">✨ Install as Mobile App:</strong>
+        • <strong>iPhone (Safari):</strong> Tap <em>Share icon</em> ➔ <em>"Add to Home Screen"</em>.<br>
+        • <strong>Android (Chrome):</strong> Tap <em>Menu (⋮)</em> ➔ <em>"Install App"</em> or <em>"Add to Home screen"</em>.
+      </div>
+    </div>
   </div>
 </div>
 

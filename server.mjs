@@ -432,7 +432,15 @@ export const server = http.createServer(async (req, res) => {
     // CSRF / origin check for mutating API calls
     if (route.startsWith('/api/') && !['GET', 'HEAD'].includes(method)) {
       if (route !== '/api/webhooks/razorpay') {
-        if (req.headers.origin !== origin && !(req.headers.authorization?.startsWith('Bearer ') && session(req)))
+        const isAllowedOrigin = req.headers.origin === origin ||
+          Boolean(req.headers.origin && (
+            req.headers.origin.startsWith('http://localhost:') ||
+            req.headers.origin.startsWith('http://127.0.0.1:') ||
+            req.headers.origin.startsWith('http://10.') ||
+            req.headers.origin.startsWith('http://192.168.') ||
+            req.headers.origin.startsWith('http://172.')
+          ));
+        if (!isAllowedOrigin && !(req.headers.authorization?.startsWith('Bearer ') && session(req)))
           fail(403, 'Request origin rejected.');
         if (!(req.headers['content-type'] || '').startsWith('application/json'))
           fail(415, 'JSON content type required.');
@@ -1040,5 +1048,5 @@ export const server = http.createServer(async (req, res) => {
 });
 
 if (process.argv[1] === fileURLToPath(import.meta.url))
-  server.listen(Number(process.env.PORT || 8000), process.env.HOST || '127.0.0.1', () =>
-    console.log(`GoServe running at ${origin}`));
+  server.listen(Number(process.env.PORT || 8000), process.env.HOST || '0.0.0.0', () =>
+    console.log(`GoServe running at ${origin} (LAN: http://0.0.0.0:${process.env.PORT || 8000})`));

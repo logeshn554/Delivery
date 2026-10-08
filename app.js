@@ -574,5 +574,24 @@ function updateWalletUI() {
   if (el) el.textContent = state.wallet.balanceFormatted;
 }
 
+// ── Phone Connect Modal ──────────────────────────────────────────────────────
+$('btnPhoneConnectModal')?.addEventListener('click', () => {
+  $('phoneModalBackdrop').hidden = false;
+});
+
+$('btnClosePhoneModal')?.addEventListener('click', () => {
+  $('phoneModalBackdrop').hidden = true;
+});
+
+$('phoneModalBackdrop')?.addEventListener('click', e => {
+  if (e.target === $('phoneModalBackdrop')) $('phoneModalBackdrop').hidden = true;
+});
+
+$('btnCopyPhoneUrl')?.addEventListener('click', () => {
+  const url = $('phoneUrlText')?.textContent || window.location.href;
+  navigator.clipboard?.writeText(url).catch(() => {});
+  showToast('URL copied! Open in phone browser.', '📋');
+});
+
 // ── Start Application ────────────────────────────────────────────────────────
 initApp();
