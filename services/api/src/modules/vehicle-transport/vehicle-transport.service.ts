@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ServiceUnavailableException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { VehicleTransportStatus, PaymentMethod } from '@prisma/client';
 import { generateOrderNumber } from '../../common/utils/generate-number.util';
@@ -7,7 +7,9 @@ export interface CreateVehicleTransportDto {
   vehicleType: string;
   vehicleMake: string;
   vehicleModel: string;
-  vehicleYear?: number;
+  vehicleYear: number;
+  vehicleColor: string;
+  vehicleRegistration: string;
   conditionDescription?: string;
   pickupAddress: string;
   pickupLat: number;
@@ -23,41 +25,42 @@ export class VehicleTransportService {
   constructor(private prisma: PrismaService) {}
 
   async createRequest(customerId: string, dto: CreateVehicleTransportDto) {
-    const baseFee = 500;
+    const baseFee = Number(process.env.VEHICLE_TRANSPORT_BASE_FARE_INR);
+    if(!Number.isFinite(baseFee)||baseFee<=0)throw new ServiceUnavailableException('Vehicle transport pricing is not configured');
+    if(!dto.vehicleYear||!dto.vehicleColor||!dto.vehicleRegistration)throw new BadRequestException('Vehicle year, color and registration are required');
     return this.prisma.vehicleTransport.create({
       data: {
         bookingNumber: generateOrderNumber('VT'),
         customerId,
         status: VehicleTransportStatus.REQUESTED,
-        transportVehicleType: dto.vehicleType as any,
-        make: dto.vehicleMake,
-        model: dto.vehicleModel,
-        year: dto.vehicleYear,
-        condition: dto.conditionDescription || 'RUNNING',
+        vehicleMake: dto.vehicleMake,
+        vehicleModel: dto.vehicleModel,
+        vehicleYear: dto.vehicleYear,
+        vehicleColor: dto.vehicleColor,
+        vehicleRegistration: dto.vehicleRegistration,
+        vehicleCondition: dto.conditionDescription || 'RUNNING',
         pickupAddress: dto.pickupAddress,
         pickupLat: dto.pickupLat,
         pickupLng: dto.pickupLng,
         dropoffAddress: dto.dropoffAddress,
         dropoffLat: dto.dropoffLat,
         dropoffLng: dto.dropoffLng,
-        totalAmount: baseFee,
+        baseFare: baseFee,
+        totalFare: baseFee,
         paymentMethod: dto.paymentMethod,
       },
     });
   }
 
-  async findById(id: string) {
+  async findById(id: string,userId:string,role:string) {
     const vt = await this.prisma.vehicleTransport.findUnique({
       where: { id },
-      include: {
-        driver: {
-          include: {
-            user: { select: { name: true, phone: true } },
-          },
-        },
-      },
     });
     if (!vt) throw new NotFoundException('Vehicle transport request not found');
+    if(vt.customerId!==userId&&!['ADMIN','SUPER_ADMIN','SUPPORT_AGENT'].includes(role)){
+      const driver=vt.driverId?await this.prisma.driver.findUnique({where:{id:vt.driverId},select:{userId:true}}):null;
+      if(driver?.userId!==userId)throw new ForbiddenException('This transport belongs to another account');
+    }
     return vt;
   }
 

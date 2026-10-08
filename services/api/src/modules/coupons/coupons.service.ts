@@ -15,8 +15,8 @@ export class CouponsService {
         id: true,
         code: true,
         description: true,
-        discountType: true,
-        discountValue: true,
+        type: true,
+        value: true,
         maxDiscount: true,
         minOrderAmount: true,
         expiresAt: true,
@@ -42,13 +42,13 @@ export class CouponsService {
     }
 
     let discount = 0;
-    if (coupon.discountType === 'PERCENTAGE') {
-      discount = (orderAmount * coupon.discountValue) / 100;
+    if (coupon.type === 'PERCENTAGE') {
+      discount = (orderAmount * coupon.value) / 100;
       if (coupon.maxDiscount) {
         discount = Math.min(discount, coupon.maxDiscount);
       }
     } else {
-      discount = coupon.discountValue;
+      discount = coupon.value;
     }
 
     return {

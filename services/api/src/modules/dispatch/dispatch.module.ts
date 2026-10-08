@@ -8,6 +8,7 @@ import { AvailabilityService } from './matching/availability.service';
 import { NearestDriverStrategy } from './strategies/nearest-driver.strategy';
 import { LowestEtaStrategy } from './strategies/lowest-eta.strategy';
 import { DISPATCH_QUEUE } from './constants/dispatch.constants';
+import { DispatchProcessor } from './dispatch.processor';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { DISPATCH_QUEUE } from './constants/dispatch.constants';
   controllers: [DispatchController],
   providers: [
     DispatchService,
+    DispatchProcessor,
     DriverMatchingService,
     DistanceService,
     AvailabilityService,

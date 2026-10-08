@@ -1,6 +1,6 @@
 export default {
   expo: {
-    name: 'GoServe', slug: 'goserve', version: '1.0.0', orientation: 'portrait', userInterfaceStyle: 'light', platforms: ['ios','android'],
+    name: 'GoServe', slug: 'goserve', version: '1.0.0', orientation: 'portrait', userInterfaceStyle: 'light', platforms: ['ios','android','web'],
     ios: { bundleIdentifier: 'com.goserve.app', supportsTablet: true },
     android: { package: 'com.goserve.app' },
     plugins: ['expo-secure-store', ['expo-location', {

@@ -42,7 +42,7 @@ export class VehicleTransportController {
   }
 
   @Get(':id')
-  async getById(@Param('id') id: string) {
-    return this.vtService.findById(id);
+  async getById(@Param('id') id: string,@CurrentUser() user:AuthenticatedUser) {
+    return this.vtService.findById(id,user.id,user.role);
   }
 }

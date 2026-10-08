@@ -16,6 +16,7 @@ import { SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { UserRole } from '@prisma/client';
+import { verifyOtpCode } from './otp-code.util';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +35,7 @@ export class AuthService {
   // ─── Send OTP ────────────────────────────────────────────────────────────
   async sendOtp(dto: SendOtpDto) {
     const { phone, role = UserRole.CUSTOMER } = dto;
+    if (!([UserRole.CUSTOMER,UserRole.DRIVER,UserRole.RESTAURANT_OWNER,UserRole.BUSINESS_OWNER] as UserRole[]).includes(role)) throw new BadRequestException('This account type cannot register here.');
 
     // Rate limit: max 5 OTPs per 10 minutes per phone
     const recentCount = await this.prisma.oTP.count({
@@ -66,15 +68,13 @@ export class AuthService {
     }
 
     // Generate and send OTP
-    const code = await this.otpService.generateAndSend(phone, user.id);
+    await this.otpService.generateAndSend(phone, user.id);
 
     this.logger.log(`OTP sent to ${phone}`);
 
     return {
       message: 'OTP sent successfully',
       phone,
-      // Only return code in development
-      ...(process.env.NODE_ENV === 'development' && { code }),
     };
   }
 
@@ -100,7 +100,7 @@ export class AuthService {
       throw new UnauthorizedException('Too many failed attempts. Request a new OTP.');
     }
 
-    if (otp.code !== code) {
+    if (!verifyOtpCode(code, otp.code)) {
       // Increment attempts
       await this.prisma.oTP.update({
         where: { id: otp.id },

@@ -39,8 +39,8 @@ export class RidesController {
   }
 
   @Get(':id')
-  async getById(@Param('id') id: string) {
-    return this.ridesService.findById(id);
+  async getById(@Param('id') id: string,@CurrentUser() user:AuthenticatedUser) {
+    return this.ridesService.findById(id,user.id,user.role);
   }
 
   @Post(':id/cancel')

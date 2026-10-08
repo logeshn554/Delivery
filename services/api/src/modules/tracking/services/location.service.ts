@@ -17,8 +17,8 @@ export class LocationService {
       data: {
         currentLat: latitude,
         currentLng: longitude,
-        currentHeading: heading,
-        currentSpeed: speed,
+        heading,
+        speed,
         lastLocationAt: new Date(),
       },
     });
@@ -30,8 +30,8 @@ export class LocationService {
       select: {
         currentLat: true,
         currentLng: true,
-        currentHeading: true,
-        currentSpeed: true,
+        heading: true,
+        speed: true,
         lastLocationAt: true,
       },
     });

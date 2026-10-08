@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import * as twilio from 'twilio';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { addMinutes } from 'date-fns';
+import { randomInt } from 'node:crypto';
+import { hashOtpCode } from './otp-code.util';
 
 @Injectable()
 export class OtpService {
@@ -13,7 +15,7 @@ export class OtpService {
     private prisma: PrismaService,
     private config: ConfigService,
   ) {
-    this.twilioClient = twilio.default(
+    this.twilioClient = twilio(
       config.get<string>('TWILIO_ACCOUNT_SID'),
       config.get<string>('TWILIO_AUTH_TOKEN'),
     );
@@ -34,7 +36,7 @@ export class OtpService {
       data: {
         userId,
         phone,
-        code,
+        code: hashOtpCode(code),
         expiresAt: addMinutes(new Date(), expiryMinutes),
         maxAttempts: this.config.get<number>('app.otpMaxAttempts', 5),
       },
@@ -48,36 +50,21 @@ export class OtpService {
 
   private generateCode(): string {
     // 6-digit OTP
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return randomInt(0, 1_000_000).toString().padStart(6, '0');
   }
 
   private async sendViaTwilio(phone: string, code: string): Promise<void> {
     try {
-      const verifyServiceSid = this.config.get<string>('TWILIO_VERIFY_SERVICE_SID');
-
-      if (verifyServiceSid) {
-        // Use Twilio Verify Service (recommended)
-        await this.twilioClient.verify.v2
-          .services(verifyServiceSid)
-          .verifications.create({ to: phone, channel: 'sms' });
-      } else {
-        // Direct SMS
-        await this.twilioClient.messages.create({
-          body: `Your DeliveryOS OTP is: ${code}. Valid for 10 minutes. Do not share this code.`,
-          from: this.config.get<string>('TWILIO_PHONE_NUMBER'),
-          to: phone,
-        });
-      }
+      await this.twilioClient.messages.create({
+        body: `Your GoServe sign-in code is ${code}. It expires in 10 minutes. Do not share it.`,
+        from: this.config.get<string>('TWILIO_PHONE_NUMBER'),
+        to: phone,
+      });
 
       this.logger.log(`OTP sent to ${phone}`);
     } catch (error) {
       this.logger.error(`Failed to send OTP to ${phone}:`, error.message);
 
-      // In development, just log and continue
-      if (process.env.NODE_ENV === 'development') {
-        this.logger.warn(`[DEV] OTP for ${phone}: (check database)`);
-        return;
-      }
       throw error;
     }
   }

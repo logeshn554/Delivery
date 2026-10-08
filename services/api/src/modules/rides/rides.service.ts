@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { DispatchService } from '../dispatch/dispatch.service';
@@ -43,9 +43,11 @@ export class RidesService {
         dropoffAddress: dto.dropoffAddress,
         dropoffLat: dto.dropoffLat,
         dropoffLng: dto.dropoffLng,
-        estimatedDistanceKm,
+        distanceKm: estimatedDistanceKm,
+        baseFare,
+        perKmRate,
+        perMinuteRate: 0,
         estimatedFare,
-        totalFare: estimatedFare,
         paymentMethod: dto.paymentMethod,
       },
     });
@@ -63,18 +65,15 @@ export class RidesService {
     return ride;
   }
 
-  async findById(rideId: string) {
+  async findById(rideId: string, userId?: string, role?: string) {
     const ride = await this.prisma.ride.findUnique({
       where: { id: rideId },
-      include: {
-        driver: {
-          include: {
-            user: { select: { name: true, phone: true, avatar: true } },
-          },
-        },
-      },
     });
     if (!ride) throw new NotFoundException('Ride not found');
+    if(userId&&ride.customerId!==userId&&!['ADMIN','SUPER_ADMIN','SUPPORT_AGENT'].includes(role||'')){
+      const driver=ride.driverId?await this.prisma.driver.findUnique({where:{id:ride.driverId},select:{userId:true}}):null;
+      if(driver?.userId!==userId)throw new ForbiddenException('This ride belongs to another account');
+    }
     return ride;
   }
 
@@ -94,8 +93,9 @@ export class RidesService {
   }
 
   async cancelRide(rideId: string, userId: string, reason: string) {
-    const ride = await this.findById(rideId);
-    if ([RideStatus.COMPLETED, RideStatus.CANCELLED].includes(ride.status)) {
+    const ride = await this.findById(rideId,userId);
+    if(ride.customerId!==userId)throw new ForbiddenException('Only the customer may cancel this ride');
+    if (([RideStatus.COMPLETED, RideStatus.CANCELLED] as RideStatus[]).includes(ride.status)) {
       throw new BadRequestException('Ride cannot be cancelled');
     }
 

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { DispatchService } from '../dispatch/dispatch.service';
@@ -34,24 +34,21 @@ export class PackagesService {
     const deliveryFee = 60; // Base parcel delivery fee
     const pkg = await this.prisma.package.create({
       data: {
-        packageNumber: generateOrderNumber('PKG'),
+        trackingNumber: generateOrderNumber('PKG'),
         customerId,
         status: PackageStatus.PENDING,
         packageType: dto.packageType as any,
         weightKg: dto.weightKg || 1,
         senderName: dto.senderName,
         senderPhone: dto.senderPhone,
-        senderAddress: dto.senderAddress,
-        senderLat: dto.senderLat,
-        senderLng: dto.senderLng,
-        recipientName: dto.recipientName,
-        recipientPhone: dto.recipientPhone,
-        recipientAddress: dto.recipientAddress,
-        recipientLat: dto.recipientLat,
-        recipientLng: dto.recipientLng,
-        instructions: dto.instructions,
-        deliveryFee,
-        totalAmount: deliveryFee,
+        senderAddress: {line1:dto.senderAddress,lat:dto.senderLat,lng:dto.senderLng},
+        receiverName: dto.recipientName,
+        receiverPhone: dto.recipientPhone,
+        receiverAddress: {line1:dto.recipientAddress,lat:dto.recipientLat,lng:dto.recipientLng},
+        deliveryInstructions: dto.instructions,
+        baseFare: deliveryFee,
+        weightFare: 0,
+        totalFare: deliveryFee,
         paymentMethod: dto.paymentMethod,
       },
     });
@@ -67,18 +64,15 @@ export class PackagesService {
     return pkg;
   }
 
-  async findById(id: string) {
+  async findById(id: string, userId: string, role: string) {
     const pkg = await this.prisma.package.findUnique({
       where: { id },
-      include: {
-        driver: {
-          include: {
-            user: { select: { name: true, phone: true, avatar: true } },
-          },
-        },
-      },
     });
     if (!pkg) throw new NotFoundException('Package delivery not found');
+    if(pkg.customerId!==userId&&!['ADMIN','SUPER_ADMIN','SUPPORT_AGENT'].includes(role)){
+      const driver=pkg.driverId?await this.prisma.driver.findUnique({where:{id:pkg.driverId},select:{userId:true}}):null;
+      if(driver?.userId!==userId)throw new ForbiddenException('This delivery belongs to another account');
+    }
     return pkg;
   }
 

@@ -39,7 +39,7 @@ export class PackagesController {
   }
 
   @Get(':id')
-  async getById(@Param('id') id: string) {
-    return this.packagesService.findById(id);
+  async getById(@Param('id') id: string,@CurrentUser() user:AuthenticatedUser) {
+    return this.packagesService.findById(id,user.id,user.role);
   }
 }

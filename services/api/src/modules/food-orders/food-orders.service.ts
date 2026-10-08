@@ -160,7 +160,7 @@ export class FoodOrdersService {
     const order = await this.getOrderOrThrow(orderId);
 
     const cancellableStatuses = [OrderStatus.PENDING, OrderStatus.CONFIRMED];
-    if (!cancellableStatuses.includes(order.status)) {
+    if (!(cancellableStatuses as OrderStatus[]).includes(order.status)) {
       throw new BadRequestException('Order cannot be cancelled at this stage');
     }
 

@@ -39,8 +39,8 @@ export class DriversService {
       data: {
         currentLat: data.lat,
         currentLng: data.lng,
-        currentHeading: data.heading,
-        currentSpeed: data.speed,
+        heading: data.heading,
+        speed: data.speed,
         lastLocationAt: new Date(),
       },
     });

@@ -9,8 +9,7 @@ export class BusinessesService {
     const business = await this.prisma.business.findFirst({
       where: { ownerId: userId },
       include: {
-        branches: true,
-        orders: { take: 10, orderBy: { createdAt: 'desc' } },
+        shipments: { take: 10, orderBy: { createdAt: 'desc' } },
       },
     });
     if (!business) throw new NotFoundException('Business account not found');
@@ -20,13 +19,13 @@ export class BusinessesService {
   async getDeliveries(businessId: string, page = 1, limit = 20) {
     const skip = (page - 1) * limit;
     const [deliveries, total] = await Promise.all([
-      this.prisma.businessDelivery.findMany({
+      this.prisma.businessShipment.findMany({
         where: { businessId },
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      this.prisma.businessDelivery.count({ where: { businessId } }),
+      this.prisma.businessShipment.count({ where: { businessId } }),
     ]);
 
     return { deliveries, total, page, limit, totalPages: Math.ceil(total / limit) };

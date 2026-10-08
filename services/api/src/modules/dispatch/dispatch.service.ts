@@ -109,18 +109,13 @@ export class DispatchService {
       Date.now() + DRIVER_REQUEST_TIMEOUT_SECONDS * 1000,
     );
 
-    const attempt = await this.prisma.dispatchAttempt.create({
-      data: {
-        dispatchId,
-        driverId,
-        sentAt: new Date(),
-        timeoutAt,
-      },
-    });
-
-    await this.prisma.dispatch.update({
-      where: { id: dispatchId },
-      data: { status: DispatchStatus.SENT_TO_DRIVER },
+    const attempt=await this.prisma.$transaction(async tx=>{
+      const reserved=await tx.dispatch.updateMany({
+        where:{id:dispatchId,status:{in:[DispatchStatus.QUEUED,DispatchStatus.SEARCHING,DispatchStatus.REJECTED,DispatchStatus.TIMED_OUT]}},
+        data:{status:DispatchStatus.SENT_TO_DRIVER},
+      });
+      if(reserved.count!==1)throw new BadRequestException('Dispatch is already assigned or has another active offer');
+      return tx.dispatchAttempt.create({data:{dispatchId,driverId,sentAt:new Date(),timeoutAt}});
     });
 
     // Notify driver via WebSocket
@@ -143,37 +138,17 @@ export class DispatchService {
 
   // ─── Accept Job ───────────────────────────────────────────────────────────
   async acceptJob(dispatchId: string, driverId: string, attemptId: string) {
-    const dispatch = await this.prisma.dispatch.findUnique({
-      where: { id: dispatchId },
-    });
-
-    if (!dispatch || dispatch.status !== DispatchStatus.SENT_TO_DRIVER) {
-      throw new BadRequestException('Job is no longer available');
-    }
-
-    // Update attempt
-    await this.prisma.dispatchAttempt.update({
-      where: { id: attemptId },
-      data: { accepted: true, respondedAt: new Date() },
-    });
-
-    // Assign dispatch
-    await this.prisma.dispatch.update({
-      where: { id: dispatchId },
-      data: {
-        status: DispatchStatus.ACCEPTED,
-        assignedDriverId: driverId,
-        assignedAt: new Date(),
-      },
-    });
-
-    // Mark driver as on-trip
-    await this.prisma.driver.update({
-      where: { id: driverId },
-      data: {
-        availability: DriverAvailability.ON_TRIP,
-        activeOrderId: dispatch.referenceId,
-      },
+    const dispatch=await this.prisma.$transaction(async tx=>{
+      const job=await tx.dispatch.findUnique({where:{id:dispatchId}});
+      if(!job||job.status!==DispatchStatus.SENT_TO_DRIVER)throw new BadRequestException('Job is no longer available');
+      const attempt=await tx.dispatchAttempt.findFirst({where:{id:attemptId,dispatchId,driverId,respondedAt:null,timeoutAt:{gt:new Date()}}});
+      if(!attempt)throw new BadRequestException('This offer is not available to this driver');
+      const claimed=await tx.dispatch.updateMany({where:{id:dispatchId,status:DispatchStatus.SENT_TO_DRIVER,assignedDriverId:null},data:{status:DispatchStatus.ACCEPTED,assignedDriverId:driverId,assignedAt:new Date()}});
+      if(claimed.count!==1)throw new BadRequestException('Job has already been accepted');
+      const ready=await tx.driver.updateMany({where:{id:driverId,status:'APPROVED',availability:DriverAvailability.ONLINE,activeOrderId:null},data:{availability:DriverAvailability.ON_TRIP,activeOrderId:job.referenceId}});
+      if(ready.count!==1)throw new BadRequestException('Driver is unavailable');
+      await tx.dispatchAttempt.update({where:{id:attemptId},data:{accepted:true,respondedAt:new Date()}});
+      return job;
     });
 
     this.eventEmitter.emit('dispatch.accepted', {
@@ -193,9 +168,11 @@ export class DispatchService {
     attemptId: string,
     reason?: string,
   ) {
-    await this.prisma.dispatchAttempt.update({
-      where: { id: attemptId },
-      data: { accepted: false, respondedAt: new Date(), rejectReason: reason },
+    await this.prisma.$transaction(async tx=>{
+      const updated=await tx.dispatchAttempt.updateMany({where:{id:attemptId,dispatchId,driverId,respondedAt:null},data:{accepted:false,respondedAt:new Date(),rejectReason:reason}});
+      if(updated.count!==1)throw new BadRequestException('This offer is no longer active');
+      const record=await tx.dispatch.updateMany({where:{id:dispatchId,status:DispatchStatus.SENT_TO_DRIVER},data:{status:DispatchStatus.REJECTED}});
+      if(record.count!==1)throw new BadRequestException('This dispatch is no longer active');
     });
 
     // Try next driver

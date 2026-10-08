@@ -10,10 +10,12 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
+  if(process.env.NODE_ENV==='production'&&(!process.env.JWT_SECRET||process.env.JWT_SECRET.length<32||!process.env.JWT_REFRESH_SECRET||process.env.JWT_REFRESH_SECRET.length<32))throw new Error('Production JWT secrets must each have at least 32 characters.');
   const logger = new Logger('Bootstrap');
 
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug'],
+    rawBody: true,
   });
 
   // ─── Security ─────────────────────────────────────────────────────────────

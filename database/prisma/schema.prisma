@@ -5,14 +5,12 @@
 
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions", "fullTextSearch"]
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
-  shadowDatabaseUrl = env("DATABASE_SHADOW_URL")
-  extensions = [postgis, pg_trgm, uuid_ossp]
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -613,10 +611,6 @@ model FoodOrder {
 
   customer            User        @relation(fields: [customerId], references: [id])
   restaurant          Restaurant  @relation(fields: [restaurantId], references: [id])
-  payment             Payment?
-  dispatch            Dispatch?
-  tracking            TrackingEvent[]
-  ratings             Rating[]
 
   @@index([customerId])
   @@index([restaurantId])
@@ -691,10 +685,6 @@ model Ride {
   updatedAt           DateTime    @updatedAt
 
   customer            User        @relation(fields: [customerId], references: [id])
-  payment             Payment?
-  dispatch            Dispatch?
-  tracking            TrackingEvent[]
-  ratings             Rating[]
 
   @@index([customerId])
   @@index([driverId])
@@ -765,10 +755,6 @@ model Package {
   updatedAt           DateTime      @updatedAt
 
   customer            User          @relation(fields: [customerId], references: [id])
-  payment             Payment?
-  dispatch            Dispatch?
-  tracking            TrackingEvent[]
-  ratings             Rating[]
 
   @@index([customerId])
   @@index([driverId])
@@ -824,10 +810,6 @@ model VehicleTransport {
   customer              User                   @relation(fields: [customerId], references: [id])
   inspections           VehicleInspection[]
   vehiclePhotos         VehiclePhoto[]
-  payment               Payment?
-  dispatch              Dispatch?
-  tracking              TrackingEvent[]
-  ratings               Rating[]
 
   @@index([customerId])
   @@index([driverId])
@@ -894,10 +876,6 @@ model Dispatch {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
-  foodOrder       FoodOrder?     @relation(fields: [referenceId], references: [id], map: "dispatch_food_order_fk")
-  ride            Ride?          @relation(fields: [referenceId], references: [id], map: "dispatch_ride_fk")
-  package         Package?       @relation(fields: [referenceId], references: [id], map: "dispatch_package_fk")
-  vehicleTransport VehicleTransport? @relation(fields: [referenceId], references: [id], map: "dispatch_vehicle_transport_fk")
 
   @@index([serviceType, referenceId])
   @@index([status])
@@ -962,10 +940,6 @@ model TrackingEvent {
   metadata      Json?
   timestamp     DateTime    @default(now())
 
-  foodOrder     FoodOrder?  @relation(fields: [referenceId], references: [id], map: "tracking_food_order_fk")
-  ride          Ride?       @relation(fields: [referenceId], references: [id], map: "tracking_ride_fk")
-  package       Package?    @relation(fields: [referenceId], references: [id], map: "tracking_package_fk")
-  vehicleTransport VehicleTransport? @relation(fields: [referenceId], references: [id], map: "tracking_vehicle_fk")
 
   @@index([serviceType, referenceId])
   @@index([driverId])
@@ -999,10 +973,6 @@ model Payment {
   updatedAt         DateTime      @updatedAt
 
   user              User          @relation(fields: [userId], references: [id])
-  foodOrder         FoodOrder?    @relation(fields: [referenceId], references: [id], map: "payment_food_order_fk")
-  ride              Ride?         @relation(fields: [referenceId], references: [id], map: "payment_ride_fk")
-  package           Package?      @relation(fields: [referenceId], references: [id], map: "payment_package_fk")
-  vehicleTransport  VehicleTransport? @relation(fields: [referenceId], references: [id], map: "payment_vehicle_fk")
 
   @@index([userId])
   @@index([serviceType, referenceId])
@@ -1011,9 +981,19 @@ model Payment {
   @@map("payments")
 }
 
+model PaymentWebhookReceipt {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider  String
+  eventId   String
+  received  DateTime @default(now())
+
+  @@unique([provider,eventId])
+  @@map("payment_webhook_receipts")
+}
+
 model Refund {
   id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  paymentId       String        @db.Uuid
+  paymentId       String        @unique @db.Uuid
   amount          Float
   reason          String
   providerRefundId String?
@@ -1092,10 +1072,6 @@ model Rating {
   ratedUser       User?       @relation("RatedUser", fields: [ratedUserId], references: [id])
   ratedDriver     Driver?     @relation("RatedDriver", fields: [ratedDriverId], references: [id])
   ratedRestaurant Restaurant? @relation("RatedRestaurant", fields: [ratedRestaurantId], references: [id])
-  foodOrder       FoodOrder?  @relation(fields: [referenceId], references: [id], map: "rating_food_order_fk")
-  ride            Ride?       @relation(fields: [referenceId], references: [id], map: "rating_ride_fk")
-  package         Package?    @relation(fields: [referenceId], references: [id], map: "rating_package_fk")
-  vehicleTransport VehicleTransport? @relation(fields: [referenceId], references: [id], map: "rating_vehicle_fk")
 
   @@index([ratedDriverId])
   @@index([ratedRestaurantId])

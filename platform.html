@@ -1,2 +1,381 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#172821"><title>GoServe app</title><link rel="icon" href="icon.svg"><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="platform.css"></head><body><header><a class="logo" href="/">g↗ <strong>goserve.</strong></a><nav aria-label="Workspaces"><a href="/app">Customer</a><a href="/partner">Partner</a><a href="/business">Business</a><a href="/operations">Operations</a></nav><button id="logout" hidden>Sign out</button></header><main><div id="message" role="status" aria-live="polite"></div><section id="auth"><div class="intro"><span class="eyebrow">EVERYTHING IN MOTION</span><h1>Your city.<br>Your next move.</h1><p>Book a service, follow your delivery, or manage your next job. Everything begins with one account.</p></div><form id="authForm" class="panel"><h2 id="authTitle">Welcome back</h2><label id="nameLabel" hidden>Your name<input name="name" autocomplete="name" maxlength="100"></label><label>Email<input name="email" type="email" autocomplete="email" required maxlength="200"></label><label>Password<input name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required></label><label id="roleLabel" hidden>Account type<select name="role"><option value="customer">Customer</option><option value="partner">Delivery partner</option><option value="business">Business</option><option value="restaurant">Restaurant</option></select></label><button class="primary" id="authSubmit">Sign in</button><button type="button" id="authToggle" class="text">Create an account</button><p class="hint">Partner accounts require operations approval before accepting jobs.</p></form></section><section id="workspace" hidden><div class="welcome"><div><span class="eyebrow" id="roleBadge"></span><h1 id="greeting"></h1></div><span class="connection" id="connection">Connecting…</span></div><div id="customerArea" hidden><div class="layout"><form id="bookingForm" class="panel"><span class="eyebrow">YOUR NEXT MOVE</span><h2>Request a service</h2><label>What do you need?<select name="service"><option value="package">Send a package</option><option value="ride">Book a ride</option><option value="food">Food delivery request</option><option value="vehicle">Move a vehicle</option><option value="business">Business shipment</option></select></label><label>Pickup address<textarea name="pickup" minlength="5" maxlength="500" required placeholder="Street, building, area, city"></textarea></label><label>Destination<textarea name="destination" minlength="5" maxlength="500" required placeholder="Full delivery or drop-off address"></textarea></label><label>Instructions<textarea name="note" maxlength="1000" placeholder="Package contents, contact instructions, vehicle details, or requested food"></textarea></label><p class="hint">Requests go to operations and eligible partners. Pricing and payment are confirmed separately until automated checkout is enabled.</p><button class="primary">Create request ↗</button></form><div><h2>Your activity</h2><div id="orders" class="stack"></div></div></div></div><div id="partnerArea" hidden><div class="banner" id="approval"></div><h2>Your jobs</h2><div id="partnerOrders" class="stack"></div><h2>Available requests</h2><div id="offers" class="stack"></div></div><div id="adminArea" hidden><div id="stats" class="stats"></div><div class="layout"><div><h2>Requests and deliveries</h2><div id="adminOrders" class="stack"></div></div><div><h2>Partner approvals</h2><div id="partners" class="stack"></div></div></div></div><div id="restaurantArea" hidden class="panel"><h2>Restaurant workspace</h2><p>Your account is registered. Merchant menus, order preparation, and restaurant payments remain part of the next service release.</p></div><section class="support" id="support"><h2>Help and support</h2><form id="supportForm" class="panel"><label>Subject<input name="subject" minlength="3" maxlength="100" required></label><label>Tell us what happened<textarea name="message" minlength="5" maxlength="2000" required></textarea></label><button>Send support request</button></form><div id="tickets" class="stack"></div></section></section></main><dialog id="tracking"><button class="close" id="closeTracking" aria-label="Close tracking">×</button><h2 id="trackingTitle"></h2><div id="trackingDetails"></div><div id="googleMap" aria-label="Delivery partner location"></div><p id="mapNote" class="hint"></p><div id="timeline" class="timeline"></div></dialog><script src="platform.js" type="module"></script></body></html>
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f1a0f">
+  <meta name="description" content="GoServe — book deliveries, track your partner live, and manage your account.">
+  <title>GoServe</title>
+  <link rel="icon" href="icon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="platform.css">
+</head>
+<body>
 
+<!-- ─── Header ────────────────────────────────────────────────────────────── -->
+<header id="appHeader" role="banner">
+  <a class="logo" href="/" aria-label="GoServe home">
+    <span class="logo-mark">g↗</span>
+    <span class="logo-word">goserve<span class="logo-dot">.</span></span>
+  </a>
+  <nav id="mainNav" aria-label="Site navigation"></nav>
+  <button id="btnLogout" class="btn btn-ghost btn-sm" hidden aria-label="Sign out of your account">Sign out</button>
+</header>
+
+<!-- ─── Global status banner ──────────────────────────────────────────────── -->
+<div id="globalMessage" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ─── Main ──────────────────────────────────────────────────────────────── -->
+<main id="appMain">
+
+  <!-- === Auth panel === -->
+  <section id="sectionAuth" aria-labelledby="authHeading">
+    <div class="auth-hero">
+      <span class="eyebrow">EVERYTHING IN MOTION</span>
+      <h1 id="authHeading">Your city.<br>Your next move.</h1>
+      <p>Book a delivery, follow it live, or manage your next job. One account for everything.</p>
+      <ul class="feature-list" aria-label="Platform features">
+        <li><span aria-hidden="true">📦</span> Package delivery</li>
+        <li><span aria-hidden="true">🛵</span> Live partner tracking</li>
+        <li><span aria-hidden="true">⚡</span> Real-time updates</li>
+      </ul>
+    </div>
+
+    <div class="auth-card card" role="region" aria-labelledby="authFormTitle">
+      <h2 id="authFormTitle" class="auth-title">Welcome back</h2>
+      <form id="authForm" novalidate>
+        <div id="fieldName" class="field" hidden>
+          <label for="inputName">Your name</label>
+          <input id="inputName" name="name" type="text" autocomplete="name"
+                 maxlength="100" placeholder="Full name" aria-required="true">
+          <span class="field-error" id="errorName" role="alert"></span>
+        </div>
+        <div class="field">
+          <label for="inputEmail">Email address</label>
+          <input id="inputEmail" name="email" type="email" autocomplete="email"
+                 maxlength="200" required placeholder="you@example.com" aria-required="true">
+          <span class="field-error" id="errorEmail" role="alert"></span>
+        </div>
+        <div class="field">
+          <label for="inputPassword">Password</label>
+          <input id="inputPassword" name="password" type="password" autocomplete="current-password"
+                 minlength="12" maxlength="128" required placeholder="At least 12 characters" aria-required="true">
+          <span class="field-error" id="errorPassword" role="alert"></span>
+        </div>
+        <div id="fieldRole" class="field" hidden>
+          <label for="inputRole">Account type</label>
+          <select id="inputRole" name="role">
+            <option value="customer">Customer — send packages, book rides</option>
+            <option value="partner">Delivery partner — accept and complete jobs</option>
+            <option value="business">Business — bulk shipments</option>
+            <option value="restaurant">Restaurant — food delivery</option>
+          </select>
+        </div>
+        <p class="hint" id="partnerHint" hidden>Partner accounts require operations approval before accepting jobs.</p>
+        <button id="btnAuthSubmit" class="btn btn-primary btn-block" type="submit">Sign in</button>
+        <button id="btnAuthToggle" class="btn btn-ghost btn-block" type="button">Create an account</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- === Workspace (shown after login) === -->
+  <section id="sectionWorkspace" hidden aria-label="Your workspace">
+
+    <div class="workspace-header">
+      <div class="workspace-identity">
+        <span class="role-badge" id="roleBadge" aria-label="Your account role"></span>
+        <h1 id="greetingText"></h1>
+      </div>
+      <span id="connectionStatus" class="connection-status" aria-live="polite" aria-label="Connection status">Connecting…</span>
+    </div>
+
+    <!-- ─ Customer workspace ─ -->
+    <div id="areaCustomer" hidden>
+      <div class="workspace-grid">
+
+        <!-- Booking panel -->
+        <section class="card booking-panel" aria-labelledby="bookingHeading">
+          <span class="eyebrow">NEW REQUEST</span>
+          <h2 id="bookingHeading">Get a quote</h2>
+
+          <form id="quoteForm" novalidate>
+            <div class="field">
+              <label for="quoteService">What do you need?</label>
+              <select id="quoteService" name="service">
+                <option value="package">📦 Send a package</option>
+                <option value="ride">🛵 Book a ride</option>
+                <option value="food">🍱 Food delivery</option>
+                <option value="vehicle">🚗 Move a vehicle</option>
+                <option value="business">🏢 Business shipment</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="quotePickup">Pickup address</label>
+              <input id="quotePickup" name="pickup" type="text"
+                     minlength="5" maxlength="500" required
+                     placeholder="Street, building, area, city" autocomplete="off"
+                     aria-required="true" aria-describedby="errorPickup">
+              <span class="field-error" id="errorPickup" role="alert"></span>
+            </div>
+            <div class="field">
+              <label for="quoteDestination">Destination</label>
+              <input id="quoteDestination" name="destination" type="text"
+                     minlength="5" maxlength="500" required
+                     placeholder="Full delivery or drop-off address" autocomplete="off"
+                     aria-required="true" aria-describedby="errorDestination">
+              <span class="field-error" id="errorDestination" role="alert"></span>
+            </div>
+
+            <button id="btnGetQuote" class="btn btn-secondary btn-block" type="submit">
+              Get price estimate →
+            </button>
+          </form>
+
+          <!-- Quote result (shown after /api/quotes) -->
+          <div id="quoteResult" hidden class="quote-result" aria-live="polite">
+            <div class="quote-price" id="quotePrice"></div>
+            <p class="quote-note" id="quoteNote"></p>
+            <form id="bookingForm" novalidate>
+              <div class="field">
+                <label for="bookingNote">Instructions <span class="optional">(optional)</span></label>
+                <textarea id="bookingNote" name="note" maxlength="1000"
+                          placeholder="Package contents, contact instructions, fragile items…"
+                          rows="3"></textarea>
+              </div>
+              <button id="btnBook" class="btn btn-primary btn-block" type="submit">
+                Confirm request ↗
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Order history -->
+        <section aria-labelledby="activityHeading">
+          <h2 id="activityHeading">Your activity</h2>
+          <div id="customerOrders" class="order-list" aria-live="polite" aria-label="Your orders"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ─ Partner workspace ─ -->
+    <div id="areaPartner" hidden>
+      <div id="partnerBanner" class="info-banner" role="status"></div>
+
+      <div class="workspace-grid partner-grid">
+        <section aria-labelledby="myJobsHeading">
+          <h2 id="myJobsHeading">My jobs</h2>
+          <div id="partnerOrders" class="order-list" aria-live="polite" aria-label="Your active jobs"></div>
+        </section>
+        <section aria-labelledby="availableHeading">
+          <h2 id="availableHeading">Available requests</h2>
+          <div id="partnerOffers" class="order-list" aria-live="polite" aria-label="Available job offers"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ─ Operations workspace ─ -->
+    <div id="areaAdmin" hidden>
+      <div id="opsStats" class="stats-grid" role="region" aria-label="Platform statistics"></div>
+      <div class="workspace-grid ops-grid">
+        <section aria-labelledby="allOrdersHeading">
+          <h2 id="allOrdersHeading">All requests</h2>
+          <div class="filter-bar" role="group" aria-label="Filter orders">
+            <button class="btn btn-sm btn-active" data-filter="all">All</button>
+            <button class="btn btn-sm" data-filter="requested">Requested</button>
+            <button class="btn btn-sm" data-filter="active">Active</button>
+            <button class="btn btn-sm" data-filter="completed">Completed</button>
+          </div>
+          <div id="adminOrders" class="order-list" aria-live="polite" aria-label="All platform orders"></div>
+        </section>
+        <div>
+          <section aria-labelledby="partnerApprovalHeading">
+            <h2 id="partnerApprovalHeading">Partner approvals</h2>
+            <div id="adminPartners" class="order-list" aria-live="polite" aria-label="Partner approval list"></div>
+          </section>
+          <section id="adminTicketsSection" aria-labelledby="opsTicketsHeading">
+            <h2 id="opsTicketsHeading">Support tickets</h2>
+            <div id="adminTickets" class="order-list" aria-live="polite" aria-label="Support tickets"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─ Restaurant workspace ─ -->
+    <div id="areaRestaurant" hidden>
+      <div class="card placeholder-card">
+        <h2>Restaurant workspace</h2>
+        <p>Your account is registered. Merchant menus, order preparation, and restaurant payments are part of a future release.</p>
+      </div>
+    </div>
+
+    <!-- ─ Business workspace ─ -->
+    <div id="areaBusiness" hidden>
+      <div class="workspace-grid">
+        <section class="card booking-panel" aria-labelledby="bizBookingHeading">
+          <span class="eyebrow">BUSINESS SHIPMENT</span>
+          <h2 id="bizBookingHeading">Get a quote</h2>
+          <form id="bizQuoteForm" novalidate>
+            <div class="field">
+              <label for="bizService">Service type</label>
+              <select id="bizService" name="service">
+                <option value="business">🏢 Business shipment</option>
+                <option value="package">📦 Package delivery</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="bizPickup">Pickup address</label>
+              <input id="bizPickup" name="pickup" type="text" minlength="5" maxlength="500" required
+                     placeholder="Warehouse or office address" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="bizDestination">Destination</label>
+              <input id="bizDestination" name="destination" type="text" minlength="5" maxlength="500" required
+                     placeholder="Delivery address" autocomplete="off">
+            </div>
+            <button class="btn btn-secondary btn-block" type="submit">Get estimate →</button>
+          </form>
+          <div id="bizQuoteResult" hidden class="quote-result" aria-live="polite">
+            <div class="quote-price" id="bizQuotePrice"></div>
+            <form id="bizBookingForm" novalidate>
+              <div class="field">
+                <label for="bizNote">Shipment details</label>
+                <textarea id="bizNote" name="note" maxlength="1000" placeholder="Contents, quantity, handling instructions" rows="3"></textarea>
+              </div>
+              <button class="btn btn-primary btn-block" type="submit">Confirm shipment ↗</button>
+            </form>
+          </div>
+        </section>
+        <section aria-labelledby="bizActivityHeading">
+          <h2 id="bizActivityHeading">Shipment activity</h2>
+          <div id="businessOrders" class="order-list" aria-live="polite" aria-label="Business orders"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ─ Support (all roles) ─ -->
+    <section id="sectionSupport" class="support-section" aria-labelledby="supportHeading">
+      <h2 id="supportHeading">Help &amp; support</h2>
+      <div class="support-grid">
+        <div class="card">
+          <h3>Send a request</h3>
+          <form id="supportForm" novalidate>
+            <div class="field">
+              <label for="ticketSubject">Subject</label>
+              <input id="ticketSubject" name="subject" type="text" minlength="3" maxlength="100" required
+                     placeholder="What can we help you with?">
+            </div>
+            <div class="field">
+              <label for="ticketMessage">Tell us what happened</label>
+              <textarea id="ticketMessage" name="message" minlength="5" maxlength="2000" required
+                        placeholder="Please describe your issue in detail…" rows="4"></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit">Send request</button>
+          </form>
+        </div>
+        <div>
+          <h3>Your tickets</h3>
+          <div id="myTickets" class="order-list" aria-live="polite" aria-label="Your support tickets"></div>
+        </div>
+      </div>
+    </section>
+
+  </section><!-- /sectionWorkspace -->
+</main>
+
+<!-- ─── Tracking dialog ───────────────────────────────────────────────────── -->
+<dialog id="dlgTracking" aria-labelledby="trackingTitle" aria-modal="true">
+  <button class="dialog-close" id="btnCloseTracking" aria-label="Close tracking dialog">×</button>
+  <h2 id="trackingTitle"></h2>
+  <div id="trackingMeta" class="tracking-meta"></div>
+  <div id="googleMap" aria-label="Partner location map" role="img"></div>
+  <p id="mapNote" class="hint map-note"></p>
+  <ol id="trackingTimeline" class="timeline" aria-label="Order status history"></ol>
+</dialog>
+
+<!-- ─── Delivery code dialog ──────────────────────────────────────────────── -->
+<dialog id="dlgDeliveryCode" aria-labelledby="deliveryCodeTitle" aria-modal="true">
+  <button class="dialog-close" id="btnCloseDeliveryCode" aria-label="Close">×</button>
+  <h2 id="deliveryCodeTitle">Your delivery code</h2>
+  <p>Share this six-digit code with your partner <em>after</em> they hand over your package.</p>
+  <div class="code-display" id="deliveryCodeDisplay" aria-label="Delivery code" role="region"></div>
+  <p id="codeExpiry" class="hint"></p>
+  <button class="btn btn-secondary" id="btnCopyCode">Copy code</button>
+</dialog>
+
+<!-- ─── Rate delivery dialog ─────────────────────────────────────────────── -->
+<dialog id="dlgRating" aria-labelledby="ratingTitle" aria-modal="true">
+  <button class="dialog-close" id="btnCloseRating" aria-label="Close">×</button>
+  <h2 id="ratingTitle">Rate your delivery</h2>
+  <p id="ratingOrderId" class="hint"></p>
+  <form id="ratingForm" novalidate>
+    <fieldset class="star-fieldset">
+      <legend>How was your experience? <span aria-hidden="true">★</span></legend>
+      <div class="stars" role="radiogroup" aria-label="Rating stars">
+        <label class="star-label">
+          <input type="radio" name="rating" value="1" required aria-label="1 star">
+          <span aria-hidden="true">★</span>
+        </label>
+        <label class="star-label">
+          <input type="radio" name="rating" value="2" aria-label="2 stars">
+          <span aria-hidden="true">★</span>
+        </label>
+        <label class="star-label">
+          <input type="radio" name="rating" value="3" aria-label="3 stars">
+          <span aria-hidden="true">★</span>
+        </label>
+        <label class="star-label">
+          <input type="radio" name="rating" value="4" aria-label="4 stars">
+          <span aria-hidden="true">★</span>
+        </label>
+        <label class="star-label">
+          <input type="radio" name="rating" value="5" aria-label="5 stars">
+          <span aria-hidden="true">★</span>
+        </label>
+      </div>
+    </fieldset>
+    <div class="field">
+      <label for="ratingComment">Comment <span class="optional">(optional)</span></label>
+      <textarea id="ratingComment" name="comment" maxlength="500" rows="3"
+                placeholder="Tell us about your experience…"></textarea>
+    </div>
+    <div role="status" id="ratingStatus" class="hint" aria-live="polite"></div>
+    <button class="btn btn-primary btn-block" type="submit">Submit rating</button>
+  </form>
+</dialog>
+
+<!-- ─── Assign partner dialog ─────────────────────────────────────────────── -->
+<dialog id="dlgAssign" aria-labelledby="assignTitle" aria-modal="true">
+  <button class="dialog-close" id="btnCloseAssign" aria-label="Close">×</button>
+  <h2 id="assignTitle">Assign a partner</h2>
+  <form id="assignForm" novalidate>
+    <div class="field">
+      <label for="assignPartner">Select approved partner</label>
+      <select id="assignPartner" name="partnerId" required aria-required="true"></select>
+    </div>
+    <div role="status" id="assignStatus" class="hint" aria-live="polite"></div>
+    <button class="btn btn-primary btn-block" type="submit">Assign partner</button>
+  </form>
+</dialog>
+
+<!-- ─── Delivery code entry dialog (partner) ─────────────────────────────── -->
+<dialog id="dlgProof" aria-labelledby="proofTitle" aria-modal="true">
+  <button class="dialog-close" id="btnCloseProof" aria-label="Close">×</button>
+  <h2 id="proofTitle">Enter delivery code</h2>
+  <p>Ask the customer for their 6-digit delivery code to complete this job.</p>
+  <form id="proofForm" novalidate>
+    <div class="field">
+      <label for="proofCode">Customer delivery code</label>
+      <input id="proofCode" name="proofCode" type="text" inputmode="numeric"
+             pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code"
+             placeholder="000000" aria-required="true">
+      <span class="field-error" id="errorProof" role="alert"></span>
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">Complete delivery</button>
+  </form>
+</dialog>
+
+<script src="platform.js" type="module"></script>
+</body>
+</html>

@@ -12,7 +12,7 @@ export class SmsProvider {
     const token = config.get<string>('TWILIO_AUTH_TOKEN');
 
     if (sid && token) {
-      this.client = twilio.default(sid, token);
+      this.client = twilio(sid, token);
     } else {
       this.logger.warn('Twilio not configured — SMS notifications disabled');
     }

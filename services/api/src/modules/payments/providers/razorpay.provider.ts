@@ -40,7 +40,7 @@ export class RazorpayProvider {
       .createHmac('sha256', secret)
       .update(body)
       .digest('hex');
-    return expectedSignature === params.signature;
+    return /^[a-f0-9]{64}$/i.test(params.signature||'')&&crypto.timingSafeEqual(Buffer.from(expectedSignature,'hex'),Buffer.from(params.signature,'hex'));
   }
 
   async createRefund(params: { paymentId: string; amount: number }) {
@@ -55,6 +55,6 @@ export class RazorpayProvider {
       .createHmac('sha256', secret)
       .update(body)
       .digest('hex');
-    return expectedSignature === signature;
+    return /^[a-f0-9]{64}$/i.test(signature||'')&&crypto.timingSafeEqual(Buffer.from(expectedSignature,'hex'),Buffer.from(signature,'hex'));
   }
 }

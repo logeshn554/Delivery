@@ -35,7 +35,14 @@ test('booking, approvals, dispatch, tracking and role isolation',async()=>{
     assert.equal((await request('/api/orders/'+id+'/location',{lat:100,lng:77.59,accuracy:8},partner)).status,400);
     assert.equal((await request('/api/orders/'+id+'/location',{lat:12.97,lng:77.59,accuracy:8},partner)).status,200);
     assert.equal((await request('/api/orders/'+id,undefined,customer)).body.order.location.lat,12.97);
-    for(const status of ['arriving','picked_up','in_transit','completed'])assert.equal((await request('/api/orders/'+id+'/status',{status},partner)).status,200);
+    for(const status of ['arriving','picked_up','in_transit'])assert.equal((await request('/api/orders/'+id+'/status',{status},partner)).status,200);
+    assert.equal((await request('/api/orders/'+id+'/status',{status:'completed'},partner)).status,409);
+    assert.equal((await request('/api/orders/'+id+'/delivery-code',{},other)).status,403);
+    assert.equal((await request('/api/orders/'+id+'/delivery-code',{},partner)).status,403);
+    const deliveryCode=(await request('/api/orders/'+id+'/delivery-code',{},customer)).body.code;
+    assert.match(deliveryCode,/^[0-9]{6}$/);
+    assert.equal((await request('/api/orders/'+id+'/status',{status:'completed',proofCode:'999999'},partner)).status,403);
+    assert.equal((await request('/api/orders/'+id+'/status',{status:'completed',proofCode:deliveryCode},partner)).status,200);
     const completed=(await request('/api/orders/'+id,undefined,customer)).body.order;assert.equal(completed.status,'completed');assert.equal(completed.location,null);assert.equal(completed.events.length,6);
     assert.equal((await request('/api/orders/'+id+'/location',{lat:12.97,lng:77.59,accuracy:8},partner)).status,403);
     assert.equal((await request('/api/tickets',{subject:'Delivery question',message:'Please help with my package.'},customer)).status,201);

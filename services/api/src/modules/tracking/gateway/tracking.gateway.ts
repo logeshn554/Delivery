@@ -32,7 +32,7 @@ interface JoinRoomDto {
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'],
     credentials: true,
   },
   namespace: '/tracking',
@@ -76,8 +76,10 @@ export class TrackingGateway
       });
 
       // Attach user to socket
+      const account=await this.prisma.user.findUnique({where:{id:payload.sub},select:{role:true,status:true}});
+      if(!account||['BANNED','SUSPENDED'].includes(account.status)){client.disconnect();return;}
       client.data.userId = payload.sub;
-      client.data.role = payload.role;
+      client.data.role = account.role;
 
       // Join user room
       client.join(`user:${payload.sub}`);
@@ -123,12 +125,8 @@ export class TrackingGateway
 
     await this.trackingService.updateDriverLocation(driverId, data);
 
-    // Broadcast to customers tracking this driver
-    this.server.to(`driver-tracking:${driverId}`).emit('driver:location_updated', {
-      driverId,
-      ...data,
-      timestamp: new Date().toISOString(),
-    });
+    const dispatch=await this.prisma.dispatch.findFirst({where:{assignedDriverId:driverId,status:'ACCEPTED'},orderBy:{createdAt:'desc'}});
+    if(dispatch)await this.emitAuthorized(dispatch.serviceType,dispatch.referenceId,'driver:location_updated',{driverId,...data,timestamp:new Date().toISOString()});
 
     return { ok: true };
   }
@@ -169,6 +167,8 @@ export class TrackingGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() data: JoinRoomDto,
   ) {
+    if(!data||typeof data.serviceType!=='string'||typeof data.referenceId!=='string')throw new WsException('Invalid tracking request');
+    await this.trackingService.assertAccess(client.data.userId,client.data.role,data.serviceType,data.referenceId);
     const room = `tracking:${data.serviceType}:${data.referenceId}`;
     client.join(room);
     this.logger.debug(`User ${client.data.userId} joined tracking room ${room}`);
@@ -210,15 +210,13 @@ export class TrackingGateway
   // ─── Event Emitter Listeners (bridge domain events → WebSocket) ───────────
 
   @OnEvent('dispatch.accepted')
-  handleDispatchAccepted(payload: any) {
-    const room = `tracking:${payload.serviceType}:${payload.referenceId}`;
-    this.server.to(room).emit('delivery:assigned', payload);
+  async handleDispatchAccepted(payload: any) {
+    await this.emitAuthorized(payload.serviceType,payload.referenceId,'delivery:assigned',payload);
   }
 
   @OnEvent('order:status_updated')
-  handleOrderStatusUpdated(payload: any) {
-    const room = `tracking:${payload.serviceType}:${payload.referenceId}`;
-    this.server.to(room).emit('order:updated', payload);
+  async handleOrderStatusUpdated(payload: any) {
+    await this.emitAuthorized(payload.serviceType,payload.referenceId,'order:updated',payload);
     // Also notify user directly
     this.server.to(`user:${payload.customerId}`).emit('order:updated', payload);
   }
@@ -242,8 +240,15 @@ export class TrackingGateway
     this.server.to(`driver:${driverId}`).emit(event, data);
   }
 
-  emitToTrackingRoom(serviceType: string, referenceId: string, event: string, data: any) {
+  private async emitAuthorized(serviceType:string,referenceId:string,event:string,data:any) {
     const room = `tracking:${serviceType}:${referenceId}`;
-    this.server.to(room).emit(event, data);
+    for(const socket of await this.server.in(room).fetchSockets()){
+      try{await this.trackingService.assertAccess(socket.data.userId,socket.data.role,serviceType,referenceId);socket.emit(event,data);}
+      catch{socket.leave(room);}
+    }
+  }
+
+  async emitToTrackingRoom(serviceType: string, referenceId: string, event: string, data: any) {
+    await this.emitAuthorized(serviceType,referenceId,event,data);
   }
 }

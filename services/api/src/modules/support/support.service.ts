@@ -21,13 +21,15 @@ export class SupportService {
         customerId,
         subject: dto.subject,
         status: TicketStatus.OPEN,
-        category: (dto.category as any) || 'OTHER',
-        orderId: dto.orderId,
+        referenceId: dto.orderId,
+        description: dto.message,
+        tags: [],
         messages: {
           create: {
             senderId: customerId,
             senderRole: 'CUSTOMER',
-            message: dto.message,
+            content: dto.message,
+            attachments: [],
           },
         },
       },
